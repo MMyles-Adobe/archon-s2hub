@@ -1,0 +1,16 @@
+{
+  "web": {
+    "figma": {
+      "status": "available"
+    },
+    "rsp": {
+      "status": "not-available",
+      "hasPage": false,
+      "note": "Docs page not yet written."
+    },
+    "swc": {
+      "status": "not-available"
+    }
+  },
+  "figmaPageId": "10097:77563"
+}

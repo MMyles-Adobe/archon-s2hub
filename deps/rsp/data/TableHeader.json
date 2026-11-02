@@ -1,0 +1,25 @@
+{
+  "props": [
+    {
+      "property": "columns",
+      "type": "Iterable<T>",
+      "kind": "unknown",
+      "values": [],
+      "description": "A list of table columns."
+    },
+    {
+      "property": "children",
+      "type": "string | number | bigint | false | true | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<AwaitedReactNode> | (item: T) => ReactElement<unknown, string | JSXElementConstructor<any>>",
+      "kind": "unknown",
+      "values": [],
+      "description": "A list of `Column(s)` or a function. If the latter, a list of columns must be provided using\nthe `columns` prop."
+    },
+    {
+      "property": "dependencies",
+      "type": "readonly any[]",
+      "kind": "unknown",
+      "values": [],
+      "description": "Values that should invalidate the column cache when using dynamic collections."
+    }
+  ]
+}

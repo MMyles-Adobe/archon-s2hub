@@ -1,0 +1,176 @@
+name: Update React Spectrum Component Properties
+
+on:
+  schedule:
+    - cron: '0 7 * * *' # Daily at 7am UTC
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: extract-rsp-properties
+  cancel-in-progress: false
+
+env:
+  # One long-lived branch rather than one per run, so a quiet week leaves no debris and
+  # there is only ever a single extraction PR to review. Recreated from the default
+  # branch every run and force-pushed — see the "Commit" step.
+  BRANCH: chore/rsp-component-properties
+  DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+
+jobs:
+  update-properties:
+    if: github.repository == 'adobe/spectrum-hub'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # extract-props.js resolves types through the real `typescript` compiler
+      # (deps/rsp/build-ts-checker.js), so this step is required — it wasn't before.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Discover published S2 components
+        run: node deps/rsp/discover-components.js
+
+      - name: Extract component properties
+        run: node deps/rsp/extract-props.js
+
+      # Rebuilds the combined index from the freshly-extracted RSP data plus the
+      # currently-committed SWC data. Fails closed on an empty roster.
+      - name: Build combined status index
+        run: node deps/build-status-index.js
+
+      - name: Stage extraction output
+        id: stage
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add deps/rsp/components.json deps/rsp/data/ deps/status-index.json deps/status/ deps/impl-component-names.js
+          if git diff --staged --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Upstream is unchanged since the last run. No branch, no PR."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff --staged --stat
+          fi
+
+      - name: Close stale PR and remove bot branch when output is unchanged
+        if: steps.stage.outputs.changed == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing=$(gh pr list \
+            --head "$BRANCH" \
+            --base "$DEFAULT_BRANCH" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh pr close "$existing" --comment "Closing because the latest extraction matches \`$DEFAULT_BRANCH\`."
+          fi
+
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
+            git push origin --delete "$BRANCH"
+          else
+            branch_status=$?
+            if [ "$branch_status" -ne 2 ]; then
+              echo "git ls-remote failed for $BRANCH with status $branch_status" >&2
+              exit "$branch_status"
+            fi
+          fi
+
+      - name: Lint extracted output
+        # The PR this opens gets no `pull_request` checks of its own (GitHub does not run
+        # workflows for PRs opened with GITHUB_TOKEN), so validation happens here. Failed
+        # output is still proposed for review, then the final guard keeps the run red.
+        id: lint
+        if: steps.stage.outputs.changed == 'true'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run lint:js 2>&1 | tee "$RUNNER_TEMP/lint.log"
+
+      - name: Test extracted output
+        id: extraction_tests
+        if: steps.stage.outputs.changed == 'true'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          npm run test:extractions 2>&1 | tee "$RUNNER_TEMP/extraction-tests.log"
+
+      - name: Describe what changed
+        if: steps.stage.outputs.changed == 'true'
+        env:
+          LINT_OUTCOME: ${{ steps.lint.outcome }}
+          TEST_OUTCOME: ${{ steps.extraction_tests.outcome }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          node .github/scripts/extraction-validation-report.js \
+            "$RUNNER_TEMP/lint.log" \
+            "$RUNNER_TEMP/extraction-tests.log" \
+            > "$RUNNER_TEMP/validation.md"
+
+          {
+            echo "Automated run of \`.github/workflows/extract-rsp-properties.yml\`."
+            echo
+            echo "Re-ran discovery and extraction against the current published"
+            echo "\`@react-spectrum/s2\` types, then rebuilt the combined status index."
+            echo
+            node .github/scripts/roster-delta.js deps/rsp/components.json
+            echo
+            cat "$RUNNER_TEMP/validation.md"
+          } > "$RUNNER_TEMP/pr-body.md"
+
+          cat "$RUNNER_TEMP/validation.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit to a branch and open a PR
+        if: steps.stage.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git switch -c "$BRANCH"
+          git commit -m "chore: update React Spectrum component properties and status index"
+          # Force is safe on a bot-owned branch recreated from the default branch each
+          # run — but it does discard commits pushed onto the branch by hand. Land the
+          # PR, or make follow-up fixes on a branch of your own.
+          git push --force origin "$BRANCH"
+
+          existing=$(gh pr list \
+            --head "$BRANCH" \
+            --base "$DEFAULT_BRANCH" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh pr edit "$existing" --body-file "$RUNNER_TEMP/pr-body.md"
+            echo "Updated existing PR #$existing"
+          else
+            gh pr create \
+              --base "$DEFAULT_BRANCH" \
+              --head "$BRANCH" \
+              --title "chore: update React Spectrum component properties" \
+              --body-file "$RUNNER_TEMP/pr-body.md"
+          fi
+
+      - name: Fail when extraction validation failed
+        if: always() && steps.stage.outputs.changed == 'true'
+        env:
+          LINT_OUTCOME: ${{ steps.lint.outcome }}
+          TEST_OUTCOME: ${{ steps.extraction_tests.outcome }}
+        run: |
+          if [ "$LINT_OUTCOME" != "success" ] || [ "$TEST_OUTCOME" != "success" ]; then
+            echo "Extraction output was published, but validation failed." >&2
+            exit 1
+          fi

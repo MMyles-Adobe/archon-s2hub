@@ -1,0 +1,194 @@
+[
+  {
+    "attribute": "disabled",
+    "property": "disabled",
+    "type": "boolean",
+    "kind": "boolean",
+    "values": [],
+    "optional": false,
+    "default": "false",
+    "description": "Disables the textarea, the upload button, file drop, and send. While\n`generating`, the stop button stays enabled so generation can still be\nstopped.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "generating",
+    "property": "generating",
+    "type": "boolean",
+    "kind": "boolean",
+    "values": [],
+    "optional": false,
+    "default": "false",
+    "description": "Replaces the send button with a stop button that fires\n`swc-prompt-field-stop`. The textarea stays editable, but Enter doesn't\nsubmit until `generating` is removed.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "variant",
+    "property": "variant",
+    "type": "\"subtle\" | \"balanced\" | \"prominent\"",
+    "kind": "enum",
+    "values": [
+      "subtle",
+      "balanced",
+      "prominent"
+    ],
+    "optional": false,
+    "default": "'balanced'",
+    "description": "Visual intensity of the AI brand treatment.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "size",
+    "property": "size",
+    "type": "\"s\" | \"m\"",
+    "kind": "enum",
+    "values": [
+      "s",
+      "m"
+    ],
+    "optional": false,
+    "default": "'m'",
+    "description": "Size of the prompt field.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "loader",
+    "property": "loader",
+    "type": "PixelLoaderIconName | PixelLoaderPresetName",
+    "kind": "unknown",
+    "values": [],
+    "optional": false,
+    "default": "'aiLogo'",
+    "description": "Status loader artwork: a single icon name (static), or a preset name (`cc`, `dc`, `exp`, `analyze`, `mega`) that cycles a themed sequence. Routed to the loader's icon/preset in `_renderStatusIcon`.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "animate-loader",
+    "property": "animateLoader",
+    "type": "boolean",
+    "kind": "boolean",
+    "values": [],
+    "optional": false,
+    "default": "false",
+    "description": "Animates the status loader while generating; otherwise it stays static. Has no visible effect unless `generating` is also `true`.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "accessible-label",
+    "property": "accessibleLabel",
+    "type": "string",
+    "kind": "text",
+    "values": [],
+    "optional": false,
+    "default": "'AI prompt'",
+    "description": "Accessible name for the textarea, applied as `aria-label`. Not rendered as visible text.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "send-accessible-label",
+    "property": "sendAccessibleLabel",
+    "type": "string",
+    "kind": "text",
+    "values": [],
+    "optional": false,
+    "default": "'Submit AI prompt'",
+    "description": "Accessible name for the send button.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "stop-accessible-label",
+    "property": "stopAccessibleLabel",
+    "type": "string",
+    "kind": "text",
+    "values": [],
+    "optional": false,
+    "default": "'Stop generating'",
+    "description": "Accessible name for the send button while it acts as stop during `generating`.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "upload-accessible-label",
+    "property": "uploadAccessibleLabel",
+    "type": "string",
+    "kind": "text",
+    "values": [],
+    "optional": false,
+    "default": "'Add attachment'",
+    "description": "Accessible name for the upload button.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "attachment-scroll-prev-accessible-label",
+    "property": "attachmentScrollPrevAccessibleLabel",
+    "type": "string",
+    "kind": "text",
+    "values": [],
+    "optional": false,
+    "default": "'Show previous attachments'",
+    "description": "Accessible name for the previous-attachment scroll button.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "attachment-scroll-next-accessible-label",
+    "property": "attachmentScrollNextAccessibleLabel",
+    "type": "string",
+    "kind": "text",
+    "values": [],
+    "optional": false,
+    "default": "'Show more attachments'",
+    "description": "Accessible name for the next-attachment scroll button.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "attachment-strip-accessible-label",
+    "property": "attachmentStripAccessibleLabel",
+    "type": "string",
+    "kind": "text",
+    "values": [],
+    "optional": false,
+    "default": "'Uploaded assets strip'",
+    "description": "Accessible name for the uploaded-attachments strip landmark.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "placeholder",
+    "property": "placeholder",
+    "type": "string",
+    "kind": "text",
+    "values": [],
+    "optional": false,
+    "default": "'Ready to get started? Ask a question, share an idea, or add a task.'",
+    "description": "Placeholder text shown inside the textarea.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "value",
+    "property": "value",
+    "type": "string",
+    "kind": "text",
+    "values": [],
+    "optional": false,
+    "default": "''",
+    "description": "The current textarea value; internally updated and externally mirrorable.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "min-rows",
+    "property": "minRows",
+    "type": "number",
+    "kind": "number",
+    "values": [],
+    "optional": true,
+    "description": "Minimum visible textarea rows before growth; unset relies on the natural single-line height.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "max-rows",
+    "property": "maxRows",
+    "type": "number",
+    "kind": "number",
+    "values": [],
+    "optional": true,
+    "description": "Maximum visible textarea rows before internal scrolling; unset relies on max-block-size alone.",
+    "since": "2.0.0-beta.3"
+  }
+]

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" class="spectrum-edge">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>se-segmentedcontrol fixture</title>
+  <link rel="stylesheet" href="/styles/styles.css">
+  <!-- se.js imports the bare "lit" specifier -->
+  <script type="importmap">
+    { "imports": { "lit": "/deps/lit/dist/index.js" } }
+  </script>
+</head>
+<body>
+  <main class="test-container">
+    <se-segmentedcontrol label="View" labelPosition="side">
+      <fieldset>
+        <label>
+          <input type="radio" name="view" value="map" checked>
+          <span>Map</span>
+        </label>
+        <label>
+          <input type="radio" name="view" value="list">
+          <span>List</span>
+        </label>
+        <label>
+          <input type="radio" name="view" value="grid">
+          <span>Grid</span>
+        </label>
+      </fieldset>
+    </se-segmentedcontrol>
+    <se-segmentedcontrol label="Sort order">
+      <fieldset>
+        <label><input type="radio" name="sort" value="ascending" checked><span>Ascending</span></label>
+        <label><input type="radio" name="sort" value="descending"><span>Descending</span></label>
+      </fieldset>
+    </se-segmentedcontrol>
+    <se-segmentedcontrol>
+      <fieldset>
+        <legend>Alignment</legend>
+        <label><input type="radio" name="alignment" value="left" checked><span>Left</span></label>
+        <label><input type="radio" name="alignment" value="center"><span>Center</span></label>
+        <label><input type="radio" name="alignment" value="right"><span>Right</span></label>
+      </fieldset>
+    </se-segmentedcontrol>
+    <se-segmentedcontrol label="Wrapped options" style="max-inline-size: 240px;">
+      <fieldset>
+        <label><input type="radio" name="wrapped" value="one" checked><span>Option one</span></label>
+        <label><input type="radio" name="wrapped" value="two"><span>Option two</span></label>
+        <label><input type="radio" name="wrapped" value="three"><span>Option three</span></label>
+        <label><input type="radio" name="wrapped" value="four"><span>Option four</span></label>
+        <label><input type="radio" name="wrapped" value="five"><span>Option five</span></label>
+        <label><input type="radio" name="wrapped" value="six"><span>Option six</span></label>
+      </fieldset>
+    </se-segmentedcontrol>
+  </main>
+  <script type="module">
+    import '/deps/se/se.js';
+  </script>
+</body>
+</html>

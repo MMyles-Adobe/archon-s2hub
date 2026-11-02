@@ -1,0 +1,26 @@
+{
+  "props": [
+    {
+      "property": "loadingState",
+      "type": "\"loading\" | \"sorting\" | \"loadingMore\" | \"error\" | \"idle\" | \"filtering\"",
+      "kind": "enum",
+      "values": [
+        "loading",
+        "sorting",
+        "loadingMore",
+        "error",
+        "idle",
+        "filtering"
+      ],
+      "description": "The current loading state of the TreeView or TreeView row."
+    },
+    {
+      "property": "onLoadMore",
+      "type": "() => any",
+      "kind": "unknown",
+      "values": [],
+      "description": "Handler that is called when more items should be loaded, e.g. while scrolling near the bottom.",
+      "inheritedFrom": "AsyncLoadable"
+    }
+  ]
+}

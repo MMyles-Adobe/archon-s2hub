@@ -1,0 +1,28 @@
+[
+  {
+    "attribute": "status",
+    "property": "status",
+    "type": "\"active\" | \"complete\" | \"stopped\"",
+    "kind": "enum",
+    "values": [
+      "active",
+      "complete",
+      "stopped"
+    ],
+    "optional": false,
+    "default": "'active'",
+    "description": "Timeline state for connector icons.",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "open",
+    "property": "open",
+    "type": "boolean",
+    "kind": "boolean",
+    "values": [],
+    "optional": false,
+    "default": "false",
+    "description": "Whether this step's description is expanded in the timeline. Steps are\ncollapsed by default regardless of `status`.",
+    "since": "2.0.0-beta.3"
+  }
+]

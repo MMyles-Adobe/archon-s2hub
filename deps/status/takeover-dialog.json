@@ -1,0 +1,16 @@
+{
+  "web": {
+    "figma": {
+      "status": "available"
+    },
+    "rsp": {
+      "status": "available",
+      "upstreamName": "Dialog"
+    },
+    "swc": {
+      "status": "not-available",
+      "secondary": "Use dialog"
+    }
+  },
+  "figmaPageId": "9918:359"
+}

@@ -1,0 +1,685 @@
+#sitenav {
+  --sitenav-blur: var(--sh-glass-blur);
+
+  /* Opaque stand-in for the translucent panel fills when the blur can't run (see the
+     @supports / prefers-reduced-transparency blocks at the end). */
+  --sitenav-panel-solid: var(--s2-gray-50);
+  --sitenav-corner-radius: var(--s2-corner-radius-950);
+  --sitenav-children-transition-duration: 160ms;
+  --sitenav-children-transition-ease: cubic-bezier(0.23, 1, 0.32, 1);
+
+  /* -10px accommodates the focus ring so that it wraps around the ::before selection indicator bar:
+  2px width of selection indicator, 6px padding to text, 2px to focus ring */
+  --sitenav-focus-ring-inline: -10px;
+  --sitenav-focus-ring-block: -2px;
+
+  /* Level 1 */
+  --level-1-content-margin: 7px; /* 56px - 32px / 2 */
+
+  /* Expand Toggle */
+  --expand-panel-width: 1.5px;
+  --expand-toggle-top-margin: 92px;
+  --expand-toggle-hover-duration: 120ms;
+  --expand-toggle-hover-ease: cubic-bezier(0.65, 0, 0.35, 1);
+
+  display: block;
+  grid-area: sitenav;
+  place-self: start;
+  position: sticky;
+  top: var(--sh-header-height);
+  font-size: var(--s2-component-m-regular-font-size);
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--s2-gray-800) 70%, transparent);
+  z-index: 100;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+
+  /* Safari can't transition `overlay`, so a closing tooltip leaves the top layer while still
+  displayed */
+  swc-tooltip {
+    transition-property: transform, opacity;
+  }
+
+  nav {
+    /* Intentionally unpositioned: .level-2-menu anchors to #sitenav instead, which is
+    how it escapes the overflow clipping here and on ul.level-1-list. */
+    box-sizing: border-box;
+    width: var(--sitenav-nav-width);
+    margin-inline-start: var(--sitenav-inline-start-margin);
+    border-radius: var(--sitenav-corner-radius);
+    overflow: hidden;
+    padding: var(--s2-spacing-300) var(--s2-spacing-200);
+    background-color: var(--s2-gray-25);
+    transition: border-radius var(--sitenav-layout-transition-duration) var(--sitenav-layout-transition-ease) 150ms;
+
+    /* Pinned explicitly: #sitenav is this pseudo-element's containing block now, and
+    it's wider than nav by nav's inline-start margin. Keep backdrop-filter off nav
+    itself — it would make nav a containing block again and re-trap the flyouts. */
+    &::before {
+      content: "";
+      position: absolute;
+      inset-block: 0;
+      inset-inline: var(--sitenav-inline-start-margin) 0;
+      z-index: -1;
+
+      /* TODO: readdress/restyle background blur after preview release */
+      -webkit-backdrop-filter: blur(var(--sitenav-blur));
+      backdrop-filter: blur(var(--sitenav-blur));
+      border-radius: var(--sitenav-corner-radius);
+      pointer-events: none;
+      transition: border-radius var(--sitenav-layout-transition-duration) var(--sitenav-layout-transition-ease) 150ms;
+    }
+  }
+
+  p {
+    margin: 0;
+  }
+
+  p:has(strong) {
+    margin-block-start: var(--s2-spacing-400);
+    color: color-mix(in srgb, var(--s2-gray-800) 70%, transparent);
+    font-size: var(--s2-component-s-regular-font-size);
+  }
+
+  a {
+    color: color-mix(in srgb, var(--s2-gray-800) 70%, transparent);
+    text-decoration: none;
+    outline: none;
+    position: relative;
+    font-weight: 400;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset-inline-start: -6px;
+      inset-block: 0;
+      inline-size: 2px;
+      block-size: 18px;
+      margin-block: auto;
+      background-color: transparent;
+      border-radius: 2px;
+      transition: background-color 150ms ease;
+    }
+
+    &.is-current-page {
+      color: var(--s2-gray-900);
+      font-weight: 700;
+
+      &::before {
+        background-color: var(--s2-gray-900);
+      }
+    }
+
+    &:hover {
+      color:  var(--s2-gray-800);
+    }
+
+    &:hover::before {
+      background-color: var(--s2-gray-800);
+    }
+
+    /* Fallback for a leaf link sitting directly in the rail, with no flyout
+    ancestor to overflow into. Flyout rows use the ::after ring instead. */
+    &:focus-visible {
+      outline: var(--se-focus-indicator-width) solid var(--s2-blue-800);
+      outline-offset: calc(-1 * var(--se-focus-indicator-width));
+      border-radius: var(--s2-corner-radius-600);
+    }
+  }
+
+  button {
+    all: unset;
+    cursor: pointer;
+    font-size: inherit;
+
+    &:hover,
+    &:not(.sitenav-expand-btn)[aria-expanded="true"] {
+      color: var(--s2-gray-800);
+
+      svg {
+        color: var(--s2-gray-800);
+      }
+    }
+
+    &[aria-expanded="true"] {
+      font-weight: 700;
+    }
+
+    &:focus-visible {
+      outline: var(--se-focus-indicator-width) solid var(--s2-blue-800);
+      outline-offset: calc(-1 * var(--se-focus-indicator-width));
+      border-radius: var(--s2-corner-radius-600);
+    }
+  }
+
+  svg {
+    color: var(--s2-gray-700);
+    display: block;
+  }
+
+  .icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .level-2-menu.can-expand {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  [aria-expanded="true"] + .level-2-menu {
+    visibility: visible;
+    pointer-events: auto;
+    padding-inline: var(--s2-spacing-400);
+    transition-delay: 0s, 150ms, 0s;
+
+    > * {
+      opacity: 1;
+    }
+
+    /* Only let a level-3 or level-4 sub-list re-assert visibility:visible
+    (see .level-3-menu/.level-4-menu) while its own level-2-menu is the
+    active/visible one. */
+    button[aria-expanded="true"] + :is(.level-3-menu, .level-4-menu) {
+      visibility: visible;
+    }
+  }
+
+  .level-2-menu.is-hidden-after-switch {
+    visibility: hidden;
+    transition: none;
+  }
+
+  ul.level-1-list {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    display: grid;
+    max-height: calc(100dvh - var(--sh-header-height) - var(--s2-spacing-400));
+
+    /* Without an explicit track, .level-1-button's real box (and its focus ring)
+    extends far past the 32px closed rail, with only its left edge visible. */
+    overflow-y: auto;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s2-spacing-100);
+    transition: width var(--sitenav-layout-transition-duration) var(--sitenav-layout-transition-ease);
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+
+    &.is-switching-level-2 {
+      .level-2-menu {
+        transition:
+          border-radius
+          var(--sitenav-layout-transition-duration)
+          var(--sitenav-layout-transition-ease)
+          150ms;
+      }
+
+      .level-2-menu > * {
+        transition:
+          opacity
+          var(--sitenav-children-transition-duration)
+          var(--sitenav-children-transition-ease);
+      }
+
+      .level-2-menu.is-switching-out {
+        visibility: visible;
+        padding-inline: var(--s2-spacing-400);
+        background-color: transparent;
+        background-image: none;
+        box-shadow: none;
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+      }
+    }
+  }
+
+  .level-1-button {
+    display: flex;
+    align-items: center;
+    gap: var(--s2-spacing-85);
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      inline-size: 2px;
+      block-size: 18px;
+      margin-block: auto;
+      background-color: transparent;
+      border-radius: 2px;
+      transition: background-color 150ms ease;
+      pointer-events: none;
+    }
+
+    &:hover::before {
+      background-color: var(--s2-gray-800);
+    }
+
+    &[aria-expanded="true"]::before {
+      background-color: var(--s2-gray-800);
+    }
+
+    svg {
+      margin: var(--level-1-content-margin);
+
+      /* Keep the icon at full size when the closed 32px rail */
+      flex-shrink: 0;
+    }
+
+    .list-item-label {
+      padding-inline-end: calc(var(--level-1-content-margin) + 4px);
+    }
+  }
+
+  .level-2-menu {
+    box-sizing: border-box;
+    transition:
+      padding-inline var(--sitenav-layout-transition-duration) var(--sitenav-layout-transition-ease),
+      border-radius var(--sitenav-layout-transition-duration) var(--sitenav-layout-transition-ease) 150ms,
+      visibility 0s linear var(--sitenav-layout-transition-duration);
+    width: var(--sitenav-level-2-width);
+    max-height: calc(100dvh - var(--sh-header-height) - var(--s2-spacing-400));
+    padding-block: calc(var(--s2-spacing-400) - 8px);
+    padding-inline: 0;
+    background-color: var(--s2-gray-25);
+
+    /* #sitenav's box is the rail plus its inline-start margin, so 100%/0 land on the
+    rail's outer edge and top. Replaces anchor() (Chromium-only — Safari and Firefox
+    drop it and strand the panel at its static position, overlapping the rail). */
+    position: absolute;
+    top: 0;
+    inset-inline-start: 100%;
+    border-radius: var(--sitenav-corner-radius);
+    
+    /* TODO: readdress/restyle background blur after preview release */
+    -webkit-backdrop-filter: blur(var(--sitenav-blur));
+    backdrop-filter: blur(var(--sitenav-blur));
+    margin-inline-start: var(--s2-spacing-85);
+    overflow-y: auto;
+
+    /* Anything taller scrolls internally instead of running past the edge of the
+    screen. 100% is the rail's own height — what anchor-size(height) meant. */
+    @media (width < 900px) {
+      max-height: 100%;
+    }
+
+    > * {
+      display: block;
+      opacity: 0;
+      transition: opacity var(--sitenav-layout-transition-duration) var(--sitenav-layout-transition-ease);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+
+      > * {
+        transition: none;
+      }
+    }
+
+    /* focus ring for level-2 */
+    :is(a, button) {
+      position: relative;
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset-inline: var(--sitenav-focus-ring-inline);
+        inset-block: var(--sitenav-focus-ring-block);
+        border-radius: var(--s2-corner-radius-600);
+        pointer-events: none;
+      }
+
+      &:focus-visible {
+        outline: none;
+
+        &::after {
+          border: var(--se-focus-indicator-width) solid var(--s2-blue-900);
+        }
+      }
+    }
+
+    li.linked-list > button {
+      --sitenav-focus-ring-inline: -4px 0;
+    }
+
+    > .list-item-label {
+      color: var(--s2-gray-1000);
+      font-weight: 700;
+      line-height: var(--s2-component-m-height);
+      font-size: var(--s2-component-s-regular-font-size);
+    }
+
+    ul.level-2-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+
+      li, a {
+        display: block;
+        line-height: var(--s2-component-l-height);
+        width: 100%;
+        flex: 1;
+
+        > ul {
+          padding: 0;
+        }
+      }
+
+      li > p strong{
+        color: var(--s2-gray-1000);
+      }
+
+      li.linked-list {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+
+        button {
+          /* WCAG 2.2 2.5.8 Target Size (Minimum): 24x24px */
+          justify-content: end;
+          width: 24px;
+          height: 32px;
+        }
+
+        .can-expand {
+          flex: 0 0 100%;
+        }
+      }
+
+      .count-badge {
+        padding-inline: 2px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--s2-gray-1000);
+        background: color-mix(in srgb, var(--s2-gray-700) 15%, transparent);
+      }
+
+      button {
+        inline-size: 100%;
+        box-sizing: border-box;
+        color: color-mix(in srgb, var(--s2-gray-800) 70%, transparent);
+
+        &::before {
+          content: '';
+          position: absolute;
+          inset-inline-start: -6px;
+          inset-block: 0;
+          inline-size: 2px;
+          block-size: 18px;
+          margin-block: auto;
+          background-color: transparent;
+          border-radius: 2px;
+          transition: background-color 150ms ease;
+        }
+
+        &:hover {
+          color: var(--s2-gray-800);
+        }
+
+        &:hover::before {
+          background-color: var(--s2-gray-800);
+        }
+      }
+
+      :is(.level-2-button, .level-3-button)[aria-expanded="true"] {
+        font-weight: 700;
+      }
+
+      /* a child page is selected but the parent is collapsed. */
+      :is(.level-2-button, .level-3-button)[aria-expanded="false"]:has(
+        + :is(.level-3-menu, .level-4-menu) .is-current-page
+      ) {
+        font-weight: 700;
+
+        &::before {
+          background-color: color-mix(in srgb, var(--s2-gray-800) 70%, transparent);
+        }
+
+        &:hover::before {
+          background-color: var(--s2-gray-800);
+        }
+      }
+    }
+
+    .level-3-menu,
+    .level-4-menu {
+      display: grid;
+      grid-template-rows: 0fr;
+
+      /* visibility:hidden also pulls its links out of tab order while collapsed. */
+      visibility: hidden;
+      transition:
+        grid-template-rows
+        var(--sitenav-children-transition-duration)
+        var(--sitenav-children-transition-ease);
+    }
+
+    .level-3-list,
+    .level-4-list {
+      padding-inline-start: var(--s2-spacing-300);
+      list-style: none;
+
+      /* when the parent is collapsed, the level 3/4 lists should be 0px high */
+      min-block-size: 0;
+
+      /* clip rather than hidden so the clip margin can let a row's focus ring paint
+      outside the list, while collapsed rows stay clipped out of .level-2-menu's
+      scroll region. */
+      overflow: clip;
+
+      /* overflow-clip-margin only accepts direct values, so using a calc with the custom property doesn't work.
+      opted for a magic number that's the same as the focus ring inline value */
+      overflow-clip-margin: 10px;
+    }
+
+    button {
+      display: flex;
+      align-items: center;
+      gap: var(--s2-spacing-85);
+      width: 100%;
+
+      .list-item-label {
+        flex: 1;
+      }
+
+      .icon {
+        color: inherit;
+        width: 10px;
+        height: 10px;
+        transition:
+          transform
+          var(--sitenav-children-transition-duration)
+          var(--sitenav-children-transition-ease)
+      }
+
+      &[aria-expanded="true"] {
+        font-weight: 400;
+
+        .icon {
+          transform: rotate(90deg);
+          color: inherit;
+        }
+
+        & + :is(.level-3-menu, .level-4-menu) {
+          grid-template-rows: 1fr;
+        }
+      }
+    }
+  }
+
+  .sitenav-expand-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+
+    &:hover {
+      --expand-panel-width: 5px;
+      --expand-toggle-hover-duration: 240ms;
+      --expand-toggle-hover-ease: linear;
+    }
+
+    #animate-panel-bar {
+      transition: width var(--expand-toggle-hover-duration) var(--expand-toggle-hover-ease);
+
+      @media (prefers-reduced-motion: reduce) {
+        transition: none;
+      }
+    }
+
+    @media (width >= 900px) {
+      margin-block-start: var(--expand-toggle-top-margin);
+    }
+  }
+
+  /* Below 900px this fixed, viewport-pinned trigger opens the sitenav overlay,
+  which shows the same rail (icons only) as desktop by default — tap
+  sitenav-expand-btn inside it to reveal labels, same as desktop. */
+  .sitenav-trigger-btn {
+    display: flex;
+    position: fixed;
+    inset-inline-start: 36px; /* margin from edge of viewport to sitenav + padding of sitenav */
+    inset-block-end: var(--s2-spacing-400);
+    z-index: 1;
+    border-radius: var(--s2-corner-radius-600);
+    justify-content: center;
+    align-items: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    background-color: var(--s2-gray-1000);
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      border-radius: inherit;
+      -webkit-backdrop-filter: blur(var(--sitenav-blur));
+      backdrop-filter: blur(var(--sitenav-blur));
+      pointer-events: none;
+    }
+
+    > svg,
+    &[aria-expanded="true"] svg {
+      color: var(--s2-gray-25);
+    }
+
+    &:hover svg,
+    &[aria-expanded="true"] svg {
+      color: var(--s2-gray-100) !important; /* !important needed to override the not selector at line 111 */
+    }
+
+    @media (width >= 900px) {
+      display: none;
+    }
+  }
+
+  &:not([is-expanded]) {
+    --expand-panel-width: 5px;
+
+    .sitenav-expand-btn:hover {
+      --expand-panel-width: 1.5px;
+    }
+  }
+
+  /* Below 900px there's no room for the rail, so it's hidden by default and
+  only sitenav-trigger-btn shows it. */
+  @media (width < 900px) {
+    nav {
+      display: none;
+    }
+
+    &[is-open] {
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+      position: fixed;
+      z-index: 300;
+      top: auto;
+      inset-block-end: calc(var(--s2-spacing-400) + 32px + 6px);
+
+      nav {
+        display: block;
+      }
+    }
+  }
+}
+
+#sitenav-spacer {
+  --spacer-min-width: var(--sh-sitenav-width);
+
+  width: var(--spacer-min-width);
+  margin-inline-start: var(--s2-spacing-400);
+  grid-area: sitenav;
+}
+
+
+html:has(meta[name="template"][content="marketing"]) {
+  #sitenav {
+    position: fixed;
+  }
+}
+
+/* Lifted direct from prototype. The surface colors are shared with the
+   scrolled header, so they live as --sh-glass-* tokens in styles.css. */
+.light-scheme {
+  nav::before, .level-2-menu, .sitenav-expand-btn::before {
+    box-shadow: inset 0 0 3px #fff, 0 0 .5px #0000001a, 0 9px 94.8px #0000000d;
+    background-color: var(--sh-glass-background-color);
+    background-image: var(--sh-glass-background-image);
+  }
+}
+
+.dark-scheme {
+  nav:not(.page-nav, .breadcrumbs), .level-2-menu, .sitenav-expand-btn::before {
+    background-color: var(--sh-glass-background-color);
+    background-image: var(--sh-glass-background-image);
+  }
+}
+
+/* Those panel fills are 50% white in light and 4% in dark: they only read as surfaces
+   because of the backdrop blur behind them. Where the blur can't run, nav text sits
+   on whatever the page put there, so fall back to an opaque surface. Two triggers —
+   no blur support at all, and readers who asked for less transparency (iOS "Reduce
+   Transparency", which switches it off even where it is supported). */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  #sitenav nav::before,
+  #sitenav .level-2-menu {
+    background-color: var(--sitenav-panel-solid);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  #sitenav nav::before,
+  #sitenav .level-2-menu {
+    background-color: var(--sitenav-panel-solid);
+  }
+}
+
+/* A bordered pseudo-element does render in forced colors, but border-color maps to
+   the plain text color. Name the system focus color instead so the ring reads as
+   focus rather than as a box drawn around the row. */
+@media (forced-colors: active) {
+  #sitenav .level-2-menu :is(a, button):focus-visible::after {
+    border-color: Highlight;
+  }
+}

@@ -1,0 +1,706 @@
+/*
+ * Copyright 2022 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+
+/*
+ * AWS Lambda (Function URL) port of the Cloudflare Worker in ../website.
+ *
+ * The routing, gate, and proxy logic below is the same adapter that lives in
+ * the worker's index.js - the only difference is the entry shape. A Worker is
+ * handed a Web `Request` and returns a `Response`; a Lambda Function URL is
+ * handed an event (payload format 2.0) and returns a plain response object.
+ * So this file does exactly two extra things the Worker does not: it builds a
+ * `Request` from the event on the way in (toRequest) and serialises the
+ * `Response` back to the Lambda shape on the way out (toLambdaResponse).
+ *
+ * The handlers/ and lib/ modules use only Web-standard globals (fetch, Request,
+ * Response, crypto.subtle, btoa/atob, TextEncoder), all of which the nodejs22.x
+ * runtime provides, so they run here without modification. Both are local to
+ * this folder - this Lambda is fully self-contained, forked from the ../website
+ * worker (e.g. lib/gate.js's public homepage policy diverges). The deploy
+ * script bundles them alongside this file.
+ *
+ * env: on Workers this is a bindings object; here it is process.env. The
+ * shared modules already treat env as a plain object for exactly this reason.
+ */
+
+import { fetchFromAem } from './handlers/aem.js';
+import { createSession, deleteSession } from './handlers/auth.js';
+import { readSession, DEFAULT_SESSION_COOKIE_NAME } from './lib/session.js';
+import {
+  classifyPublicPath, getCanonicalPagePath, isPageLike, isPrivateHtml, PUBLIC_FILTER_PATHS,
+} from './lib/gate.js';
+import { filterAudienceBlocks, filterAudienceMarkdown } from './lib/audience.js';
+import { filterPrivateEntries, compactEntries, collectPrivatePaths } from './lib/query-index.js';
+import { filterSitemap, rewriteSitemapHosts } from './lib/sitemap.js';
+import { toGatedEtag, toUpstreamIfNoneMatch } from './lib/etag.js';
+import { resolveSecrets } from './lib/secrets.js';
+
+const env = process.env;
+
+// Anonymous, cacheable content (public HTML and the filtered query index and
+// sitemap) gets a
+// short shared TTL so a publish becomes visible within a few minutes without push
+// invalidation; authenticated/private responses stay no-store. Env-overridable
+// (ANON_CACHE_MAX_AGE, seconds; default 300). Set it to 0 to disable anonymous
+// edge caching entirely (no-store) so publishes show immediately - suitable for a
+// low-traffic preview; anything non-numeric/negative falls back to the default.
+const parseMaxAge = (value, fallback) => {
+  const n = Number(value);
+  return value !== undefined && value !== '' && Number.isInteger(n) && n >= 0 ? n : fallback;
+};
+const ANON_CACHE_MAX_AGE = parseMaxAge(env.ANON_CACHE_MAX_AGE, 300);
+
+// Shared-cache (CloudFront) TTL for the same anonymous content, sent as
+// s-maxage so it can outlive the browser's max-age. Defaults to
+// ANON_CACHE_MAX_AGE; raise it (e.g. to days) once AEM push invalidation is
+// configured for the distribution, since a publish then purges the edge copy.
+const ANON_EDGE_MAX_AGE = parseMaxAge(env.ANON_EDGE_MAX_AGE, ANON_CACHE_MAX_AGE);
+
+// Cache-Control for a post-filter content response: a shared TTL for anonymous
+// (the body is the public, audience-stripped view, and CloudFront's cache key
+// includes spectrum_session so it can never reach an authenticated viewer), or
+// no-store when both TTLs are 0 (live, instant publishes); no-store for
+// authenticated/private. Anonymous responses carry a gated ETag (see markGated /
+// lib/etag.js) so CloudFront's post-TTL revalidation is still a cheap
+// conditional 304, but only for a copy the current gate produced. Bump
+// GATE_ETAG_VERSION in lib/etag.js when the filtering/gating logic changes so
+// already cached bodies are re-fetched and re-filtered (see README "Content
+// caching").
+const setContentCacheControl = (resp, authed) => {
+  const anon = (ANON_CACHE_MAX_AGE === 0 && ANON_EDGE_MAX_AGE === 0)
+    ? 'no-store'
+    : `public, max-age=${ANON_CACHE_MAX_AGE}, s-maxage=${ANON_EDGE_MAX_AGE}`;
+  resp.headers.set('cache-control', authed ? 'private, no-store' : anon);
+  resp.headers.delete('age');
+};
+
+// Replace AEM's validators on an anonymous filtered response with a gated ETag,
+// so a later If-None-Match is only forwarded upstream for a copy this gate
+// version produced (lib/etag.js). Last-Modified is dropped: If-Modified-Since
+// is never forwarded for these responses, so it would only cost a round trip.
+const markGated = (resp) => {
+  const gated = toGatedEtag(resp.headers.get('etag'));
+  if (gated) {
+    resp.headers.set('etag', gated);
+  } else {
+    resp.headers.delete('etag');
+  }
+  resp.headers.delete('last-modified');
+};
+
+// no-store: many 404s here are gate decisions that vary by viewer (a private
+// page, a stripped index), so they must never be reused from a shared cache.
+const notFound = () => new Response('Not found', {
+  status: 404,
+  headers: { 'cache-control': 'no-store' },
+});
+
+// The whole /auth/ namespace is claimed here so that nothing under it can
+// ever reach the AEM proxy, which would attach the origin credential and
+// forward the request body - the IMS access token - upstream. A path that
+// is not an exact match for a known endpoint is a 404, not a proxy.
+// A Map, not an object literal: the key is a request path, and a plain
+// object would resolve '/auth/constructor'-shaped lookups off the prototype.
+const AUTH_ENDPOINTS = new Map([
+  ['/auth/session', { POST: createSession, DELETE: deleteSession }],
+]);
+
+const isAuthPath = (path) => path === '/auth' || path.startsWith('/auth/');
+
+const methodNotAllowed = (methods) => {
+  const resp = new Response('Method Not Allowed', { status: 405 });
+  resp.headers.set('allow', methods.join(', '));
+  return resp;
+};
+
+// The per-method dispatch happens here, not inside each handler, so a
+// wrong method for this path is answered with every valid method for the
+// path - not just the one handler that happened to be looked up.
+const handleAuth = (context) => {
+  const handlers = AUTH_ENDPOINTS.get(context.url.pathname);
+  if (!handlers) { return notFound(); }
+  // hasOwnProperty, not a bare lookup: a method like 'constructor' or
+  // '__proto__' would otherwise resolve to an Object.prototype member and get
+  // called (or crash serialization) instead of answering a clean 405.
+  const { method } = context.request;
+  const handler = Object.prototype.hasOwnProperty.call(handlers, method)
+    ? handlers[method]
+    : undefined;
+  return handler ? handler(context) : methodNotAllowed(Object.keys(handlers));
+};
+
+const ROUTES = [
+  // Session cookie endpoint - handled locally, never proxied to AEM
+  {
+    match: isAuthPath,
+    handler: handleAuth,
+  },
+  // Default AEM handler should be last. This port does no caching of its own -
+  // Node's fetch has no HTTP cache - so every call reaches AEM; CloudFront in
+  // front of the Function URL is where edge caching happens.
+  {
+    match: () => true,
+    handler: fetchFromAem,
+    proxy: true,
+  },
+];
+
+const getExtension = (path) => {
+  const basename = path.split('/').pop();
+  const pos = basename.lastIndexOf('.');
+  return (basename === '' || pos < 1) ? '' : basename.slice(pos + 1);
+};
+
+const isMediaRequest = (url) => /\/media_[0-9a-f]{40,}[/a-zA-Z0-9_-]*\.[0-9a-z]+$/.test(url.pathname);
+const isRUMRequest = (url) => /\/\.(rum|optel)\/.*/.test(url.pathname);
+
+const getRUMRequest = (request, url) => {
+  if (isRUMRequest(url)) {
+    if (!['GET', 'POST', 'OPTIONS'].includes(request.method)) {
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+  }
+  return null;
+};
+
+const formatSearchParams = (url) => {
+  const { search, searchParams } = url;
+
+  if (isMediaRequest(url)) {
+    for (const [key] of searchParams.entries()) {
+      if (!['format', 'height', 'optimize', 'width'].includes(key)) { searchParams.delete(key); }
+    }
+  } else if (getExtension(url.pathname) === 'json') {
+    for (const [key] of searchParams.entries()) {
+      if (!['limit', 'offset', 'sheet'].includes(key)) { searchParams.delete(key); }
+    }
+  } else {
+    url.search = '';
+  }
+  searchParams.sort();
+
+  // Return original search params
+  return search;
+};
+
+// Pulls one named value out of the Cookie header. Cookie values here are
+// base64url, so a split on the first '=' recovers the value intact.
+const readCookie = (request, name) => {
+  const header = request.headers.get('cookie');
+  if (!header) { return null; }
+  for (const part of header.split(';')) {
+    const eq = part.indexOf('=');
+    if (eq < 0) { continue; }
+    if (part.slice(0, eq).trim() === name) { return part.slice(eq + 1).trim(); }
+  }
+  return null;
+};
+
+// A valid session cookie means an authenticated caller. Verification is
+// local (HMAC + expiry) - no store, no network - so it is cheap enough to
+// run per request.
+const isAuthenticated = async (request) => {
+  if (!env.SESSION_SECRET) { return false; }
+  const cookie = readCookie(request, DEFAULT_SESSION_COOKIE_NAME);
+  if (!cookie) { return false; }
+  return (await readSession(cookie, env.SESSION_SECRET, Date.now())) !== null;
+};
+
+// Post-fetch processing of a proxied page, in two passes that both need the
+// body (which lives in the HTML and so can only be inspected after proxying):
+//   1. Meta gate (anonymous only): a page that opts into privacy with
+//      <meta name="audience" content="private"> becomes a 404, indistinguishable
+//      from a path that does not exist. Authenticated viewers see it. Skipped
+//      for head-less variants (`variant`): a .plain.html body has no <head> to
+//      scan, so route() has already gated it on the canonical page instead.
+//   2. Audience blocks: content blocks the viewer must not see are stripped
+//      (audience-private for anonymous, audience-public for authenticated) so
+//      private markup never leaves the edge - from HTML (full page or
+//      .plain.html) and from the .md variant's Markdown alike.
+// Non-HTML/Markdown or non-200 responses (assets, redirects, the AEM 404 for a
+// missing page) pass through untouched without reading the body.
+// content-length and content-encoding are stripped in toLambdaResponse, so
+// re-wrapping the already-read body here stays consistent. `anonPage` marks an
+// anonymous page-like request, whose filtered response gets a gated ETag.
+const processHtmlResponse = async (resp, authed, anonPage, variant = false) => {
+  const contentType = resp.headers.get('content-type') || '';
+  // Revalidation of a cached anonymous page. route() only forwards a gated
+  // If-None-Match (a tag this gate version issued), so this 304 confirms a copy
+  // that already passed the gate. It keeps the short anon TTL (not AEM's longer
+  // one) and the gated tag. Asset 304s pass through with AEM's own headers.
+  if (resp.status === 304 && anonPage) {
+    setContentCacheControl(resp, authed);
+    markGated(resp);
+    return resp;
+  }
+  // Only a full 200 body can be gated. Any other success (e.g. a 206 slice)
+  // would skip the private-page check, so fail closed for anonymous pages.
+  if (anonPage && resp.status > 200 && resp.status < 300) { return notFound(); }
+  const isHtml = contentType.includes('text/html');
+  const isMarkdown = contentType.includes('text/markdown');
+  if (resp.status !== 200 || !(isHtml || isMarkdown)) { return resp; }
+  const body = await resp.text();
+  if (!authed && !variant && isPrivateHtml(body)) { return notFound(); }
+  const filtered = isMarkdown
+    ? filterAudienceMarkdown(body, authed)
+    : filterAudienceBlocks(body, authed);
+  const out = new Response(filtered, resp);
+  // Filtered per viewer: anonymous gets the public view (short shared TTL),
+  // authenticated stays no-store. The cookie-keyed cache keeps them separate.
+  setContentCacheControl(out, authed);
+  if (anonPage) { markGated(out); }
+  return out;
+};
+
+// Privacy check for a head-less page variant (.plain.html / .md): neither body
+// carries the page's <head>, so the audience meta is read from the canonical
+// page instead. GETs the canonical path from AEM through the same upstream
+// setup as the variant (origin, credential, no cookies), dropping conditional
+// headers so a revalidation can't turn it into a bodiless 304, and not
+// following redirects. Fails closed: only a 200 HTML canonical page without
+// the private meta clears the variant; private, missing, redirected, non-HTML,
+// or a fetch error all answer false, and the caller 404s.
+const isPublicCanonicalPage = async (req, url, canonicalPath) => {
+  try {
+    const canonicalUrl = new URL(url.href);
+    canonicalUrl.pathname = canonicalPath;
+    canonicalUrl.search = '';
+    const headers = new Headers(req.headers);
+    for (const name of ['if-none-match', 'if-modified-since', 'if-match', 'if-unmodified-since', 'if-range', 'range']) {
+      headers.delete(name);
+    }
+    const base = new Request(canonicalUrl, { method: 'GET', headers });
+    const upstream = await formatRequest(base, canonicalUrl);
+    const resp = await fetch(upstream, { cache: 'no-store', redirect: 'manual' });
+    if (resp.status !== 200) { return false; }
+    if (!(resp.headers.get('content-type') || '').includes('text/html')) { return false; }
+    return !isPrivateHtml(await resp.text());
+  } catch (err) {
+    console.error('website-lambda: canonical privacy check failed; denying variant:', err);
+    return false;
+  }
+};
+
+// Post-fetch transform for the query-index JSON: for anonymous visitors strip
+// the private rows and the whole `audience` column (so private paths/titles/
+// excerpts never reach an anonymous client, and it can't even tell which rows
+// were private), and optionally project every row to the columns the site nav
+// needs (?compact=true). Fails closed: a non-200, a non-JSON body, or an index
+// shape it can't recognize is a 404 for anonymous callers rather than an
+// unfiltered index. Authenticated callers see the raw body.
+const transformQueryIndex = async (resp, { removePrivate, compact }) => {
+  // A 304 (revalidation) has no body to transform; pass it through so CloudFront
+  // serves its cached filtered copy. The caller sets Cache-Control.
+  if (resp.status === 304) { return resp; }
+  if (resp.status !== 200) { return removePrivate ? notFound() : resp; }
+  let json;
+  try {
+    json = await resp.json();
+  } catch {
+    return removePrivate ? notFound() : resp;
+  }
+  if (removePrivate) {
+    json = filterPrivateEntries(json);
+    if (json === null) { return notFound(); }
+  }
+  if (compact) { json = compactEntries(json); }
+  return new Response(JSON.stringify(json), resp);
+};
+
+// Page size (and a page-count cap) for reading the whole query index when
+// building the sitemap's private-path set.
+const INDEX_PAGE_LIMIT = 1000;
+const INDEX_MAX_PAGES = 50;
+
+// The set of paths the query index marks audience:private, read straight from
+// AEM (unfiltered) and paginated until complete. Returns null on any failure -
+// a non-200, a non-JSON body, an unrecognized shape, a truncated multi-sheet
+// index, or a network error - so the caller fails closed.
+const loadPrivatePaths = async (req, url) => {
+  try {
+    const paths = new Set();
+    let offset = 0;
+    for (let page = 0; page < INDEX_MAX_PAGES; page += 1) {
+      const indexUrl = new URL('/query-index.json', url);
+      indexUrl.searchParams.set('limit', String(INDEX_PAGE_LIMIT));
+      indexUrl.searchParams.set('offset', String(offset));
+      indexUrl.searchParams.sort();
+      const indexReq = new Request(indexUrl, { headers: req.headers });
+      // Always read a full body: a 304 would leave nothing to collect.
+      indexReq.headers.delete('if-none-match');
+      indexReq.headers.delete('if-modified-since');
+      const indexAemReq = await formatRequest(indexReq, indexUrl);
+      const resp = await fetchFromAem({ request: indexAemReq });
+      if (resp.status !== 200) { return null; }
+      const json = await resp.json();
+      const result = collectPrivatePaths(json);
+      if (!result) { return null; }
+      result.paths.forEach((path) => paths.add(path));
+      if (result.complete) { return paths; }
+      // Only a single-sheet index can be paged here; an empty page would loop.
+      if (!Array.isArray(json.data) || json.data.length === 0) { return null; }
+      offset += json.data.length;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+// Rewrite authenticated sitemap URLs to the public origin without filtering
+// private entries. Unsupported sitemap formats pass through unchanged. A 304 is
+// unexpected because sitemap conditionals are stripped before the AEM request;
+// fail closed rather than let CloudFront retain a stale, untransformed body.
+const rewriteSitemapResponse = async (resp, publicOrigin) => {
+  if (resp.status === 304) { return notFound(); }
+  if (resp.status !== 200 || !publicOrigin) { return resp; }
+  const xml = await resp.text();
+  const rewritten = rewriteSitemapHosts(xml, publicOrigin);
+  const out = new Response(rewritten, resp);
+  if (rewritten !== xml) {
+    out.headers.delete('content-length');
+    out.headers.delete('etag');
+    out.headers.delete('last-modified');
+  }
+  return out;
+};
+
+// For anonymous callers, drop every <url> whose path the query index marks
+// audience:private or the gate denies outright, then rewrite AEM origins to the
+// public origin. Fails closed: a non-200, an unreadable private-path set, or a
+// body that is not a <urlset> is a 404. Validators are dropped because the
+// output depends on the query index and public origin, not only the AEM body.
+const transformSitemap = async (resp, privatePathsPromise, publicOrigin) => {
+  if (resp.status !== 200) { return notFound(); }
+  const [xml, privatePaths] = await Promise.all([resp.text(), privatePathsPromise]);
+  if (!privatePaths) { return notFound(); }
+  const isPrivatePath = (pathname) => privatePaths.has(pathname)
+    || classifyPublicPath(pathname) === 'deny';
+  const filtered = filterSitemap(xml, isPrivatePath);
+  if (filtered === null) { return notFound(); }
+  const rewritten = publicOrigin ? rewriteSitemapHosts(filtered, publicOrigin) : filtered;
+  const out = new Response(rewritten, resp);
+  out.headers.delete('content-length');
+  out.headers.delete('etag');
+  out.headers.delete('last-modified');
+  return out;
+};
+
+const formatRequest = async (request, url) => {
+  const aemUrl = new URL(url.href);
+
+  // ORIGIN overrides the AEM origin (point at a local `aem up` server for dev)
+  const origin = env.ORIGIN ? new URL(env.ORIGIN) : null;
+  if (origin) {
+    aemUrl.protocol = origin.protocol;
+    aemUrl.hostname = origin.hostname;
+    aemUrl.port = origin.port;
+  } else {
+    // aem.live (the published tier) by default; set AEM_HOST_SUFFIX=aem.page to
+    // proxy the preview tier instead (used by the stage Lambda).
+    const aemHostSuffix = env.AEM_HOST_SUFFIX || 'aem.live';
+    aemUrl.hostname = `main--${env.AEM_SITE}--${env.AEM_ORG}.${aemHostSuffix}`;
+    aemUrl.port = '';
+    aemUrl.protocol = 'https:';
+  }
+
+  const req = new Request(aemUrl, request);
+  // x-forwarded-host tells aem.live the public hostname (for absolute URLs,
+  // redirects, sitemaps). Behind CloudFront the request's own Host is the
+  // Lambda Function URL, not the public domain, so url.host comes from
+  // PUBLIC_HOST (or a CloudFront-set X-Forwarded-Host header) - see toRequest.
+  req.headers.set('x-forwarded-host', url.host);
+
+  // The session cookie is the worker's own credential; no upstream (aem.live
+  // or a local `aem up`) needs any browser cookie, so drop the whole header
+  // rather than leak spectrum_session past the edge.
+  req.headers.delete('cookie');
+
+  // The remaining headers are aem.live specific
+  if (origin) { return req; }
+
+  // The public CDN in front of this Lambda is CloudFront (the Worker original
+  // ran on Cloudflare and sent 'cloudflare'); aem.live keys push-invalidation
+  // and forwarded-header handling off this value.
+  req.headers.set('x-byo-cdn-type', 'cloudfront');
+  if (env.PUSH_INVALIDATION !== 'disabled') {
+    req.headers.set('x-push-invalidation', 'enabled');
+  }
+  // Only allowed requests reach this point (see the gate in route), so the
+  // origin credential is attached to what gets proxied upstream. Skip it when
+  // unset so a public origin isn't sent a bogus `token undefined` header;
+  // set ORIGIN_AUTHENTICATION once the aem.live origin requires it.
+  if (env.ORIGIN_AUTHENTICATION) {
+    req.headers.set('authorization', `token ${env.ORIGIN_AUTHENTICATION}`);
+  }
+  return req;
+};
+
+// The shared routing/gate/proxy pipeline, identical in spirit to the worker's
+// fetch(). Takes a Web Request, returns a Web Response.
+const route = async (req) => {
+  const url = new URL(req.url);
+
+  const rumResp = getRUMRequest(req, url);
+  if (rumResp) { return rumResp; }
+
+  const matched = ROUTES.find((r) => r.match(url.pathname));
+  if (!matched) { return notFound(); }
+
+  // Non-proxy routes need the original request, not one rewritten to AEM
+  if (!matched.proxy) { return matched.handler({ url, env, request: req }); }
+
+  // Authenticated callers bypass the path gate entirely (verdict 'allow'); auth
+  // is computed once here and reused (also by processHtmlResponse). For an
+  // anonymous visitor the path verdict decides: 'deny' is a 404 before proxying,
+  // so the request never reaches AEM and never gets the origin credential
+  // (attached in formatRequest); 'allow'/'gate'/'filter' are proxied and then
+  // post-processed below.
+  const authed = await isAuthenticated(req);
+  const verdict = authed ? 'allow' : classifyPublicPath(url.pathname);
+  if (verdict === 'deny') { return notFound(); }
+
+  // Head-less page variants (.plain.html / .md) carry no <head>, so the meta
+  // gate can't run on their body. For an anonymous visitor, settle privacy on
+  // the canonical page *before* proxying the variant; a private (or
+  // unverifiable) page is a 404 and the variant is never fetched. Runs for
+  // every method, so a HEAD can't probe a private page either.
+  const canonicalPath = getCanonicalPagePath(url.pathname);
+  const variant = canonicalPath !== null;
+  if (!authed && verdict === 'gate' && variant
+    && !(await isPublicCanonicalPage(req, url, canonicalPath))) {
+    return notFound();
+  }
+
+  // Read the compact opt-in before formatSearchParams strips it (it keeps only
+  // limit/offset/sheet for JSON) - the query-index transform below reads it.
+  const compact = url.searchParams.get('compact') === 'true';
+
+  // Normalize the query string first, then build the upstream request from the
+  // normalized url - so the stripping/sorting actually reaches AEM. (formatRequest
+  // snapshots url.href, so it must run after formatSearchParams, not before.)
+  const savedSearch = formatSearchParams(url);
+  const request = await formatRequest(req, url);
+
+  // An authenticated browser may still hold the anonymous copy of this URL
+  // (e.g. from before sign-in), so its If-None-Match / If-Modified-Since can
+  // match. A 304 would tell it to keep showing that anonymous body. Always
+  // answer authenticated requests with a full, per-viewer body instead.
+  // Likewise for the sitemap: AEM's sitemap validators describe its
+  // untransformed body. Forwarding an old CloudFront conditional can produce a
+  // 304 that preserves a cached body from before filtering or host rewriting,
+  // so always fetch a full 200.
+  const isSitemap = url.pathname === '/sitemap.xml';
+  if (authed || isSitemap) {
+    request.headers.delete('if-none-match');
+    request.headers.delete('if-modified-since');
+  }
+
+  // Anonymous pages and the anonymous query index are filtered, so a 304 from
+  // AEM is only safe when it confirms a copy the current gate produced. Forward
+  // only If-None-Match tags this gate version issued (lib/etag.js) and never
+  // If-Modified-Since. Anything else - a copy cached before the gate existed or
+  // under an older gate version, a probe for whether a private page exists -
+  // gets a full body that the gate checks again.
+  const anonPage = !authed && isPageLike(url.pathname);
+  const anonGated = anonPage || (!authed && url.pathname === '/query-index.json');
+  if (isPageLike(url.pathname) || PUBLIC_FILTER_PATHS.includes(url.pathname)) {
+    // Filtering needs the whole document. A Range request would come back as a
+    // 206 slice that skips the gate - and CloudFront could cache it for
+    // everyone - so always ask AEM for the full body.
+    request.headers.delete('range');
+    request.headers.delete('if-range');
+  }
+  let gatedConditional = false;
+  if (anonGated) {
+    request.headers.delete('if-modified-since');
+    const upstreamTag = toUpstreamIfNoneMatch(request.headers.get('if-none-match'));
+    if (upstreamTag) {
+      request.headers.set('if-none-match', upstreamTag);
+      gatedConditional = true;
+    } else {
+      request.headers.delete('if-none-match');
+    }
+  }
+
+  // An anonymous sitemap needs the query index's private paths too; start that
+  // read now so it runs alongside the sitemap fetch.
+  const sitemapFilter = !authed && isSitemap;
+  const privatePathsPromise = sitemapFilter ? loadPrivatePaths(req, url) : null;
+  const sitemapPublicOrigin = isSitemap && !env.ORIGIN
+    ? `${url.protocol}//${url.host}`
+    : null;
+
+  const resp = await matched.handler({ request, savedSearch });
+
+  // A 304 with no gated tag forwarded can't be verified against the gate: fail
+  // closed rather than confirm a copy the client should not have.
+  if (anonGated && resp.status === 304 && !gatedConditional) { return notFound(); }
+
+  // The 'filter' paths. The query-index JSON: strip audience:private rows
+  // (and the audience column) for anonymous visitors and honour ?compact=true
+  // for either audience. Sitemap URLs are rewritten from AEM origins to the
+  // environment's public origin; anonymous visitors also lose private entries.
+  // The anonymous response is cacheable with a short shared TTL; the
+  // authenticated full view carries private entries and stays no-store.
+  if (PUBLIC_FILTER_PATHS.includes(url.pathname)) {
+    let out = resp;
+    if (isSitemap) {
+      out = authed
+        ? await rewriteSitemapResponse(resp, sitemapPublicOrigin)
+        : await transformSitemap(resp, privatePathsPromise, sitemapPublicOrigin);
+    } else if (url.pathname === '/query-index.json' && (!authed || compact)) {
+      out = await transformQueryIndex(resp, { removePrivate: !authed, compact });
+    }
+    if (out.status === 200 || out.status === 304) {
+      setContentCacheControl(out, authed);
+      if (anonGated) { markGated(out); }
+    } else {
+      // Fail-closed 404 / upstream error: never cache.
+      out.headers.set('cache-control', 'no-store');
+      out.headers.delete('age');
+    }
+    return out;
+  }
+
+  // Every other proxied HTML page is processed - not just 'gate' pages - so
+  // allow-listed content (e.g. the homepage, which carries audience blocks) is
+  // filtered too. processHtmlResponse no-ops on anything but HTML/Markdown.
+  // `anonPage` tells it a bodiless 304 is a gated page revalidation that keeps
+  // the short anon TTL and gated tag, vs an asset 304 (leave AEM's headers).
+  return processHtmlResponse(resp, authed, anonPage, variant);
+};
+
+/*
+ * ---- Lambda Function URL (payload format 2.0) adapters ----
+ */
+
+// Rebuild a Web Request from the Lambda event. Function URLs carry request
+// cookies in event.cookies (not the header map), the method under
+// requestContext.http, and a possibly base64-encoded body - each is put back
+// where the shared code expects to read it.
+const toRequest = (event) => {
+  const method = event.requestContext?.http?.method ?? 'GET';
+
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(event.headers ?? {})) {
+    if (value != null) { headers.set(key, value); }
+  }
+  // Function URL v2.0 splits Cookie into an array; readCookie / the gate read
+  // a single Cookie header, so join it back.
+  const cookieHeader = (event.cookies ?? []).join('; ');
+  if (cookieHeader) { headers.set('cookie', cookieHeader); }
+
+  // PUBLIC_HOST, when set, is the environment's canonical public host and wins
+  // over the request headers - so the worker reports the same public origin no
+  // matter which URL reached it (custom domain or the raw *.cloudfront.net one).
+  // It drives the x-forwarded-host sent upstream to AEM (absolute URLs,
+  // redirects, sitemap) and the CSRF origin-check fallback. A scheme/path is
+  // tolerated but stripped; falls back to the forwarded/Host header, then the
+  // Function URL host.
+  const publicHost = env.PUBLIC_HOST?.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+  const host = publicHost
+    || headers.get('x-forwarded-host')
+    || headers.get('host')
+    || event.requestContext?.domainName
+    || 'localhost';
+  const proto = headers.get('x-forwarded-proto') ?? 'https';
+  const query = event.rawQueryString ? `?${event.rawQueryString}` : '';
+  const requestUrl = `${proto}://${host}${event.rawPath ?? '/'}${query}`;
+
+  let body;
+  if (event.body != null && method !== 'GET' && method !== 'HEAD') {
+    body = event.isBase64Encoded ? Buffer.from(event.body, 'base64') : event.body;
+  }
+
+  return new Request(requestUrl, { method, headers, body });
+};
+
+// A Lambda Function URL response is buffered, not streamed: the whole body is
+// base64'd into a single JSON payload capped at 6 MB. Base64 inflates ~33% and
+// the headers/cookies share the budget, so refuse a body whose encoded size
+// would blow the cap rather than let the platform truncate it into a corrupt
+// reply. Assets this large should be served off a path that does not transit
+// this Lambda. Margin left for the response envelope.
+const MAX_LAMBDA_BODY_BASE64_BYTES = 6 * 1024 * 1024 - 256 * 1024;
+
+// Hop-by-hop and length/encoding headers describe the upstream transfer, not
+// ours: fetch() already decoded any content-encoding when we read the body, so
+// re-advertising it (or a now-wrong content-length) would corrupt the reply.
+const STRIPPED_RESPONSE_HEADERS = new Set([
+  'content-encoding',
+  'content-length',
+  'transfer-encoding',
+  'connection',
+  'keep-alive',
+]);
+
+// Serialise a Web Response into the Function URL response shape. Set-Cookie
+// goes in the dedicated `cookies` array (Function URLs drop set-cookie from
+// the header map), and the body is always base64 so binary AEM content
+// (images, fonts) survives the JSON round-trip intact.
+const toLambdaResponse = async (response) => {
+  const headers = {};
+  for (const [key, value] of response.headers.entries()) {
+    if (key === 'set-cookie') { continue; }
+    if (STRIPPED_RESPONSE_HEADERS.has(key)) { continue; }
+    headers[key] = value;
+  }
+
+  const cookies = typeof response.headers.getSetCookie === 'function'
+    ? response.headers.getSetCookie()
+    : [];
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+  const body = buffer.length ? buffer.toString('base64') : '';
+
+  if (body.length > MAX_LAMBDA_BODY_BASE64_BYTES) {
+    console.error(`website-lambda: response body ${buffer.length} bytes exceeds the Function URL payload limit; refusing to truncate`);
+    return {
+      statusCode: 502,
+      headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' },
+      body: 'Response too large',
+      isBase64Encoded: false,
+    };
+  }
+
+  return {
+    statusCode: response.status,
+    headers,
+    cookies,
+    body,
+    isBase64Encoded: buffer.length > 0,
+  };
+};
+
+export const handler = async (event) => {
+  try {
+    // Ensure SESSION_SECRET / IMS_CLIENT_SECRET are populated from Secrets Manager
+    // before any request touches them. Cached across invocations (bounded TTL), so
+    // this is a no-op after the first cold-start fetch. Never rejects: on failure the
+    // secrets stay unset and the pipeline degrades to anonymous / 500, not a crash.
+    await resolveSecrets(env);
+    const response = await route(toRequest(event));
+    return await toLambdaResponse(response);
+  } catch (err) {
+    // A throw that escapes the pipeline is a bug or an upstream failure, not
+    // a caller error - answer 500 without leaking internals, and log for
+    // CloudWatch.
+    console.error('Unhandled error in website-lambda handler:', err);
+    return {
+      statusCode: 500,
+      headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' },
+      body: 'Internal Server Error',
+      isBase64Encoded: false,
+    };
+  }
+};

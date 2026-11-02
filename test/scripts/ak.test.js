@@ -1,0 +1,432 @@
+import { expect } from '@esm-bundle/chai';
+import sinon from 'sinon';
+import {
+  getMetadata,
+  getScheme,
+  setScheme,
+  getLocale,
+  setConfig,
+  getConfig,
+  localizeUrl,
+  decorateLink,
+  loadArea,
+  decorateAudience,
+  normalizeHeadingId,
+} from '../../scripts/ak.js';
+
+// Minimal config that won't throw inside decorateLink / loadBlock
+const SAFE_CONFIG = {
+  hostnames: ['authorkit.dev'],
+  linkBlocks: [{ fragment: '/fragments/' }, { youtube: 'https://www.youtube' }],
+  components: [],
+  locales: { '': { lang: 'en' } },
+};
+
+describe('ak.js', () => {
+  let sandbox;
+  const originalHref = window.location.href;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    setConfig(SAFE_CONFIG);
+    document.body.innerHTML = '';
+    document.head.querySelectorAll('meta[name="header"], meta[name="locale"], meta[property]').forEach((m) => m.remove());
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+    window.history.pushState({}, '', originalHref);
+  });
+
+  describe('normalizeHeadingId', () => {
+    it('removes a leading size modifier', () => {
+      expect(normalizeHeadingId('size-xl-heading')).to.equal('heading');
+    });
+
+    it('removes a trailing size modifier', () => {
+      expect(normalizeHeadingId('heading-size-xl')).to.equal('heading');
+    });
+
+    it('removes size modifiers from both boundaries', () => {
+      expect(normalizeHeadingId('size-xl-heading-size-m')).to.equal('heading');
+    });
+
+    it('preserves a size modifier in the middle', () => {
+      expect(normalizeHeadingId('heading-size-xl-details'))
+        .to.equal('heading-size-xl-details');
+    });
+
+    it('preserves similar text that is not a size modifier', () => {
+      expect(normalizeHeadingId('sizeable-heading')).to.equal('sizeable-heading');
+    });
+  });
+
+  describe('getMetadata', () => {
+    it('returns null when no matching meta tag exists', () => {
+      expect(getMetadata('missing')).to.be.null;
+    });
+
+    it('returns the content of a name meta tag', () => {
+      const meta = document.createElement('meta');
+      meta.name = 'header';
+      meta.content = '/custom/header';
+      document.head.append(meta);
+      expect(getMetadata('header')).to.equal('/custom/header');
+      meta.remove();
+    });
+
+    it('uses the property attribute for names containing a colon', () => {
+      const meta = document.createElement('meta');
+      meta.setAttribute('property', 'og:title');
+      meta.content = 'Test page';
+      document.head.append(meta);
+      expect(getMetadata('og:title')).to.equal('Test page');
+      meta.remove();
+    });
+
+    it('returns an empty string when the meta content is empty', () => {
+      const meta = document.createElement('meta');
+      meta.name = 'template';
+      meta.content = '';
+      document.head.append(meta);
+      expect(getMetadata('template')).to.equal('');
+      meta.remove();
+    });
+  });
+
+  describe('getScheme / setScheme', () => {
+    afterEach(() => {
+      localStorage.removeItem('color-scheme');
+      document.body.classList.remove('dark-scheme', 'light-scheme');
+    });
+
+    it('returns a valid stored scheme', () => {
+      localStorage.setItem('color-scheme', 'light-scheme');
+      sandbox.stub(window, 'matchMedia').returns({ matches: true });
+      expect(getScheme()).to.equal('light-scheme');
+    });
+
+    it('falls back to matchMedia when nothing is stored', () => {
+      sandbox.stub(window, 'matchMedia').returns({ matches: true });
+      expect(getScheme()).to.equal('dark-scheme');
+    });
+
+    it('ignores an invalid stored value and falls back to matchMedia', () => {
+      localStorage.setItem('color-scheme', 'banana');
+      sandbox.stub(window, 'matchMedia').returns({ matches: false });
+      expect(getScheme()).to.equal('light-scheme');
+    });
+
+    it('applies the scheme class and removes the opposite one', () => {
+      document.body.classList.add('light-scheme');
+      setScheme(document.body, 'dark-scheme');
+      expect(document.body.classList.contains('dark-scheme')).to.be.true;
+      expect(document.body.classList.contains('light-scheme')).to.be.false;
+    });
+
+    it('persists an explicit scheme set on the body', () => {
+      setScheme(document.body, 'dark-scheme');
+      expect(localStorage.getItem('color-scheme')).to.equal('dark-scheme');
+    });
+
+    it('does not persist the computed default on the body', () => {
+      sandbox.stub(window, 'matchMedia').returns({ matches: true });
+      setScheme(document.body);
+      expect(document.body.classList.contains('dark-scheme')).to.be.true;
+      expect(localStorage.getItem('color-scheme')).to.be.null;
+    });
+
+    it('does not persist a scheme set on a non-body element', () => {
+      const el = document.createElement('div');
+      setScheme(el, 'dark-scheme');
+      expect(el.classList.contains('dark-scheme')).to.be.true;
+      expect(localStorage.getItem('color-scheme')).to.be.null;
+    });
+
+    it('does nothing for a falsy element', () => {
+      expect(() => setScheme(null, 'dark-scheme')).to.not.throw();
+      expect(localStorage.getItem('color-scheme')).to.be.null;
+    });
+  });
+
+  describe('getLocale', () => {
+    it('returns prefix="" when no locales are provided', () => {
+      const locale = getLocale();
+      expect(locale.prefix).to.equal('');
+    });
+
+    it('returns prefix="" when pathname does not match any locale', () => {
+      window.history.pushState({}, '', '/about');
+      const locale = getLocale({ '': { lang: 'en' }, '/de': { lang: 'de' } });
+      expect(locale.prefix).to.equal('');
+    });
+
+    it('returns the matching locale prefix when pathname starts with it', () => {
+      window.history.pushState({}, '', '/de/about');
+      const locale = getLocale({ '': { lang: 'en' }, '/de': { lang: 'de' } });
+      expect(locale.prefix).to.equal('/de');
+    });
+
+    it('sets document.documentElement.lang from the matched locale', () => {
+      window.history.pushState({}, '', '/de/page');
+      getLocale({ '': { lang: 'en' }, '/de': { lang: 'de' } });
+      expect(document.documentElement.lang).to.equal('de');
+    });
+
+    it('prefers the locale meta tag over pathname matching', () => {
+      window.history.pushState({}, '', '/de/page');
+      const meta = document.createElement('meta');
+      meta.name = 'locale';
+      meta.content = '/fr';
+      document.head.append(meta);
+      const locale = getLocale({ '': {}, '/de': { lang: 'de' }, '/fr': { lang: 'fr' } });
+      expect(locale.prefix).to.equal('/fr');
+      meta.remove();
+    });
+  });
+
+  describe('decorateAudience', () => {
+    const buildArea = () => {
+      const area = document.createElement('main');
+      area.innerHTML = `
+        <div class="section">
+          <div class="banner audience-public">public</div>
+          <div class="banner audience-private">private</div>
+          <div class="columns">shared</div>
+        </div>`;
+      return area;
+    };
+    const classes = (area) => [...area.querySelectorAll('.banner, .columns')].map((el) => {
+      if (el.classList.contains('audience-public')) { return 'public'; }
+      if (el.classList.contains('audience-private')) { return 'private'; }
+      return 'shared';
+    });
+
+    beforeEach(() => { localStorage.clear(); });
+    afterEach(() => { localStorage.clear(); });
+
+    it('off-CDN shows the gated (private) block and drops the public copy', async () => {
+      setConfig({ ...SAFE_CONFIG, cdnEnv: false });
+      const area = buildArea();
+      await decorateAudience(area);
+      expect(classes(area)).to.deep.equal(['private', 'shared']);
+    });
+
+    it('on-CDN drops the private block for an anonymous viewer', async () => {
+      setConfig({ ...SAFE_CONFIG, cdnEnv: true });
+      const area = buildArea();
+      await decorateAudience(area); // no IMS hash / session marker => anonymous
+      expect(classes(area)).to.deep.equal(['public', 'shared']);
+    });
+
+    it('leaves an area without audience blocks untouched', async () => {
+      setConfig({ ...SAFE_CONFIG, cdnEnv: false });
+      const area = document.createElement('main');
+      area.innerHTML = '<div class="section"><div class="columns">only</div></div>';
+      await decorateAudience(area);
+      expect(area.querySelectorAll('.columns').length).to.equal(1);
+    });
+  });
+
+  describe('setConfig / getConfig', () => {
+    it('getConfig() returns a config object', () => {
+      expect(getConfig()).to.be.an('object');
+    });
+
+    it('setConfig() merges the provided properties into the config', () => {
+      setConfig({ hostnames: ['example.com'], components: [] });
+      expect(getConfig().hostnames).to.deep.equal(['example.com']);
+    });
+
+    it('config always includes a log function', () => {
+      setConfig({});
+      expect(getConfig().log).to.be.a('function');
+    });
+
+    it('config always includes a locale object with a prefix', () => {
+      setConfig({});
+      expect(getConfig().locale).to.be.an('object');
+      expect(getConfig().locale).to.have.property('prefix');
+    });
+
+    it('config always includes a codeBase string derived from the module URL', () => {
+      setConfig({});
+      expect(getConfig().codeBase).to.be.a('string');
+      expect(getConfig().codeBase.length).to.be.above(0);
+    });
+
+    it('uses a custom log function when provided', () => {
+      const log = sinon.spy();
+      setConfig({ log });
+      expect(getConfig().log).to.equal(log);
+    });
+  });
+
+  describe('localizeUrl', () => {
+    it('returns null when locale prefix is empty (root locale)', () => {
+      const config = setConfig({ locales: { '': { lang: 'en' } } });
+      const url = new URL('http://example.com/about');
+      expect(localizeUrl({ config, url })).to.be.null;
+    });
+
+    it('returns a localized URL for a non-localized path in a non-root locale', () => {
+      window.history.pushState({}, '', '/de/page');
+      const config = setConfig({ locales: { '': { lang: 'en' }, '/de': { lang: 'de' } } });
+      const url = new URL('http://example.com/about');
+      expect(localizeUrl({ config, url }).pathname).to.equal('/de/about');
+    });
+
+    it('returns null when the URL is already localized with the active prefix', () => {
+      window.history.pushState({}, '', '/de/page');
+      const config = setConfig({ locales: { '': {}, '/de': { lang: 'de' } } });
+      const url = new URL('http://example.com/de/about');
+      expect(localizeUrl({ config, url })).to.be.null;
+    });
+
+    it('returns null when the URL already carries a different locale prefix', () => {
+      window.history.pushState({}, '', '/de/page');
+      const config = setConfig({ locales: { '': {}, '/de': { lang: 'de' }, '/fr': { lang: 'fr' } } });
+      const url = new URL('http://example.com/fr/about');
+      expect(localizeUrl({ config, url })).to.be.null;
+    });
+
+    it('preserves query string and hash in the localized URL', () => {
+      window.history.pushState({}, '', '/de/page');
+      const config = setConfig({ locales: { '': {}, '/de': { lang: 'de' } } });
+      const url = new URL('http://example.com/about?q=1#sec');
+      const result = localizeUrl({ config, url });
+      expect(result.search).to.equal('?q=1');
+      expect(result.hash).to.equal('#sec');
+    });
+  });
+
+  describe('decorateLink', () => {
+    function makeAnchor(href) {
+      const a = document.createElement('a');
+      a.href = href;
+      document.body.append(a);
+      return a;
+    }
+
+    it('returns null for a plain internal link that matches no block pattern', () => {
+      const config = getConfig();
+      const a = makeAnchor('/about');
+      expect(decorateLink(config, a)).to.be.null;
+    });
+
+    it('strips the configured hostname from an absolute URL', () => {
+      const config = getConfig();
+      const a = makeAnchor('https://authorkit.dev/about');
+      decorateLink(config, a);
+      expect(a.getAttribute('href')).to.equal('/about');
+    });
+
+    it('returns the anchor and adds block classes when the href matches a linkBlock pattern', () => {
+      const config = getConfig();
+      const a = makeAnchor('/fragments/header');
+      const result = decorateLink(config, a);
+      expect(result).to.equal(a);
+      expect(a.classList.contains('fragment')).to.be.true;
+      expect(a.classList.contains('auto-block')).to.be.true;
+    });
+
+    it('sets target="_blank" for a link with a #_blank hash', () => {
+      const config = getConfig();
+      const a = makeAnchor('/page#_blank');
+      decorateLink(config, a);
+      expect(a.target).to.equal('_blank');
+    });
+
+    it('calls config.log and returns null when processing throws (e.g. missing hostnames)', () => {
+      const log = sinon.spy();
+      const badConfig = { log, linkBlocks: [] };
+      const a = makeAnchor('/test');
+      const result = decorateLink(badConfig, a);
+      expect(result).to.be.null;
+      expect(log.calledOnce).to.be.true;
+    });
+  });
+
+  describe('loadArea — non-document area', () => {
+    beforeEach(() => {
+      setConfig({ ...SAFE_CONFIG, locales: { '': { lang: 'en' } } });
+    });
+
+    it('invokes the decorateArea callback from config once', async () => {
+      const decorateArea = sinon.spy();
+      setConfig({ ...SAFE_CONFIG, decorateArea });
+      const area = document.createElement('div');
+      area.innerHTML = '<div><p>Content</p></div>';
+      await loadArea({ area });
+      expect(decorateArea.calledOnce).to.be.true;
+    });
+
+    it('adds .section class to each direct div child of the area', async () => {
+      const area = document.createElement('div');
+      area.innerHTML = '<div>One</div><div>Two</div>';
+      await loadArea({ area });
+      expect(area.querySelectorAll('.section')).to.have.length(2);
+    });
+
+    it('removes data-status from sections after processing', async () => {
+      const area = document.createElement('div');
+      area.innerHTML = '<div>Section</div>';
+      await loadArea({ area });
+      expect(area.querySelector('[data-status]')).to.be.null;
+    });
+
+    it('removes the size prefix from an icon-sized h1 id', async () => {
+      const area = document.createElement('div');
+      area.innerHTML = `
+        <div>
+          <h1 id="size-xl-overview">
+            <span class="icon icon-size-xl"></span>
+            Overview
+          </h1>
+        </div>
+      `;
+
+      await loadArea({ area });
+
+      const heading = area.querySelector('h1');
+      expect(heading.id).to.equal('overview');
+      expect(heading.classList.contains('heading-size-xl')).to.be.true;
+    });
+
+    it('removes the size prefix from an icon-sized h3 id', async () => {
+      const area = document.createElement('div');
+      area.innerHTML = `
+        <div>
+          <h3 id="details-size-m">
+            <span class="icon icon-size-m"></span>
+            Details
+          </h3>
+        </div>
+      `;
+
+      await loadArea({ area });
+
+      const heading = area.querySelector('h3');
+      expect(heading.id).to.equal('details');
+      expect(heading.classList.contains('heading-size-m')).to.be.true;
+    });
+
+    it('does not normalize a non-heading id for text size syntax', async () => {
+      const area = document.createElement('div');
+      area.innerHTML = `
+        <div>
+          <p id="size-m-summary">
+            <span class="icon icon-size-m"></span>
+            Summary
+          </p>
+        </div>
+      `;
+
+      await loadArea({ area });
+
+      const paragraph = area.querySelector('p');
+      expect(paragraph.id).to.equal('size-m-summary');
+      expect(paragraph.classList.contains('text-size-m')).to.be.true;
+    });
+  });
+});

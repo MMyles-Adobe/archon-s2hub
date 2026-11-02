@@ -1,0 +1,110 @@
+{
+  "RadioButton": {
+    "web": {
+      "rsp": {
+        "status": "available",
+        "context": "Stable",
+        "note": "A radio button is not a standalone component; it mirrors Radio Group's availability."
+      }
+    }
+  },
+  "FieldLabel": {
+    "web": {
+      "rsp": {
+        "status": "available",
+        "context": "Stable",
+        "note": "Built into Form components instead.",
+        "upstreamName": "Form"
+      }
+    }
+  },
+  "HelpText": {
+    "web": {
+      "rsp": {
+        "status": "available",
+        "context": "Stable",
+        "note": "Built into Form components instead.",
+        "upstreamName": "Form"
+      }
+    }
+  },
+  "Link": {
+    "web": {
+      "swc": {
+        "status": "available",
+        "context": "Stable",
+        "note": "Native anchor element with global CSS classes."
+      }
+    }
+  },
+  "ColorHandle": {
+    "web": {
+      "rsp": {
+        "status": "available",
+        "context": "Stable",
+        "note": "Built into color components instead.",
+        "page": "color-handle-and-loupe",
+        "upstreamName": "ColorSlider"
+      },
+      "swc": {
+        "status": "available",
+        "context": "Stable",
+        "page": "color-handle-and-loupe",
+        "upstreamName": "ColorHandle"
+      }
+    }
+  },
+  "ColorLoupe": {
+    "web": {
+      "rsp": {
+        "status": "available",
+        "context": "Stable",
+        "note": "Built into color components instead.",
+        "page": "color-handle-and-loupe",
+        "upstreamName": "ColorSlider"
+      },
+      "swc": {
+        "status": "available",
+        "context": "Stable",
+        "page": "color-handle-and-loupe",
+        "upstreamName": "ColorHandle"
+      }
+    }
+  },
+  "DateAndTimeField": {
+    "web": {
+      "rsp": {
+        "status": "available",
+        "context": "Stable",
+        "note": "React Spectrum splits this into separate Date Field, Date Picker, Date Range Picker, and Time Field components; this row mirrors their availability."
+      }
+    }
+  },
+  "CoachMark": {
+    "web": {
+      "rsp": {
+        "status": "not-available",
+        "hasPage": false,
+        "note": "Docs page not yet written."
+      }
+    }
+  },
+  "Calendar": {
+    "web": {
+      "figma": {
+        "status": "available",
+        "figmaPageSource": "Date and time field",
+        "note": "No standalone Figma design; the Date and time field design covers it."
+      }
+    }
+  },
+  "Cards": {
+    "web": {
+      "figma": {
+        "status": "available",
+        "figmaPageSource": "Cards (Asset)",
+        "note": "Cards has six Figma variant pages; Asset is the canonical one linked from See in Figma."
+      }
+    }
+  }
+}

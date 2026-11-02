@@ -1,0 +1,11 @@
+[
+  { "name": "Disclosure",      "context": "N/A" },
+  { "name": "Form",            "context": "N/A" },
+  { "name": "Labeled Value",   "context": "N/A" },
+  { "name": "Link Button",     "context": "N/A" },
+  { "name": "Range Slider",    "context": "Use slider" },
+  { "name": "Standard Dialog", "context": "Use dialog" },
+  { "name": "Standard Panel",  "context": "Use UEC" },
+  { "name": "Takeover Dialog", "context": "Use dialog" },
+  { "name": "Text Area",       "context": "Use text field" }
+]

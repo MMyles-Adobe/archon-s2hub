@@ -1,9 +1,25 @@
-<meta
-  http-equiv="Content-Security-Policy"
-  content="script-src 'nonce-aem' 'strict-dynamic' 'unsafe-inline' http: https:; base-uri 'self'; object-src 'none'; frame-src 'self' https:; require-trusted-types-for 'script';"
-  move-to-http-header="true"
-/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<script nonce="aem" src="/scripts/aem.js" type="module"></script>
-<script nonce="aem" src="/scripts/scripts.js" type="module"></script>
-<link rel="stylesheet" href="/styles/styles.css"/>
+    <link rel="stylesheet" href="/styles/styles.css"/>
+    <script nonce="aem" type="importmap">
+      { "imports": { "lit": "/deps/lit/dist/index.js" } }
+    </script>
+    <script src="/scripts/ak.js" type="module"></script>
+    <script src="/scripts/scripts.js" type="module"></script>
+    <link rel="icon" href="data:,">
+    <script nonce="aem">
+      window.addEventListener('pagereveal', async ({ viewTransition: vt }) => {
+        const postLcpReady = () => {
+          const section = document.querySelector('main > .section');
+          const header = document.querySelector('header');
+          return section && !section.dataset.status && (!header || header.querySelector('.header-content'));
+        };
+        if (!vt || await vt.ready.then(postLcpReady, () => true)) return;
+        const anims = document.getAnimations().filter((a) => a.effect?.pseudoElement?.startsWith('::view-transition'));
+        anims.forEach((a) => a.pause());
+        const start = performance.now();
+        (function check() {
+          if (postLcpReady() || performance.now() - start > 3000) anims.forEach((a) => a.play());
+          else requestAnimationFrame(check);
+        }());
+      });
+    </script>

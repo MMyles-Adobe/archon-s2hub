@@ -1,0 +1,27 @@
+[
+  {
+    "attribute": "type",
+    "property": "type",
+    "type": "\"system\" | \"user\"",
+    "kind": "enum",
+    "values": [
+      "system",
+      "user"
+    ],
+    "optional": false,
+    "default": "'user'",
+    "description": "`user` — end-aligned; `system` — start-aligned, full width of the column.\nDrives the accessible name of the turn (`User message` vs `System message`).",
+    "since": "2.0.0-beta.3"
+  },
+  {
+    "attribute": "accessible-label",
+    "property": "accessibleLabel",
+    "type": "string",
+    "kind": "text",
+    "values": [],
+    "optional": false,
+    "default": "''",
+    "description": "Optional accessible label override for the turn group.\nWhen omitted, the label falls back to `type` (\"User message\" / \"System message\").",
+    "since": "2.0.0-beta.3"
+  }
+]

@@ -1,0 +1,95 @@
+[
+  {
+    "attribute": "variant",
+    "property": "variant",
+    "type": "\"accent\" | \"informative\" | \"neutral\" | \"positive\" | \"notice\" | \"negative\" | \"fuchsia\" | \"indigo\" | \"magenta\" | \"purple\" | \"seafoam\" | \"yellow\" | \"gray\" | \"red\" | \"orange\" | \"chartreuse\" | \"celery\" | \"green\" | \"cyan\" | \"blue\" | \"pink\" | \"turquoise\" | \"brown\" | \"cinnamon\" | \"silver\"",
+    "kind": "enum",
+    "values": [
+      "accent",
+      "informative",
+      "neutral",
+      "positive",
+      "notice",
+      "negative",
+      "fuchsia",
+      "indigo",
+      "magenta",
+      "purple",
+      "seafoam",
+      "yellow",
+      "gray",
+      "red",
+      "orange",
+      "chartreuse",
+      "celery",
+      "green",
+      "cyan",
+      "blue",
+      "pink",
+      "turquoise",
+      "brown",
+      "cinnamon",
+      "silver"
+    ],
+    "optional": false,
+    "default": "'neutral'",
+    "description": "The semantic or non-semantic color variant of the badge.",
+    "since": "2.0.0-beta.1"
+  },
+  {
+    "attribute": "size",
+    "property": "size",
+    "type": "\"s\" | \"m\" | \"l\" | \"xl\"",
+    "kind": "enum",
+    "values": [
+      "s",
+      "m",
+      "l",
+      "xl"
+    ],
+    "optional": false,
+    "description": "The size of the badge.",
+    "inheritedFrom": "SizedMixin",
+    "since": "2.0.0-beta.1"
+  },
+  {
+    "attribute": "fixed",
+    "property": "fixed",
+    "type": "\"block-start\" | \"block-end\" | \"inline-start\" | \"inline-end\"",
+    "kind": "enum",
+    "values": [
+      "block-start",
+      "block-end",
+      "inline-start",
+      "inline-end"
+    ],
+    "optional": true,
+    "description": "The fixed position of the badge.",
+    "inheritedFrom": "BadgeBase",
+    "since": "2.0.0-beta.1"
+  },
+  {
+    "attribute": "subtle",
+    "property": "subtle",
+    "type": "boolean",
+    "kind": "boolean",
+    "values": [],
+    "optional": false,
+    "default": "false",
+    "description": "Whether the badge is subtle.",
+    "inheritedFrom": "BadgeBase",
+    "since": "2.0.0-beta.1"
+  },
+  {
+    "attribute": "outline",
+    "property": "outline",
+    "type": "boolean",
+    "kind": "boolean",
+    "values": [],
+    "optional": false,
+    "default": "false",
+    "description": "Whether the badge is outlined.\n\nCan only be used with semantic variants.",
+    "inheritedFrom": "BadgeBase",
+    "since": "2.0.0-beta.1"
+  }
+]

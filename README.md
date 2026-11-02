@@ -1,34 +1,321 @@
-# Your Project's Title...
-Your project's description...
+# Archon S2 Hub pilot
 
-## Environments
-- Preview: https://main--archon-s2hub--MMyles-Adobe.aem.page/
-- Live: https://main--archon-s2hub--MMyles-Adobe.aem.live/
+This repository is an independent UI pattern authoring pilot based on Spectrum
+Hub. It uses the pilot's Document Authoring (DA) content, not production Spectrum
+Hub content or infrastructure.
 
-## Documentation
+## Pilot environments
 
-Before using the aem-boilerplate, we recommend you to go through the documentation on https://www.aem.live/docs/ and more specifically:
-1. [Developer Tutorial](https://www.aem.live/developer/tutorial)
-2. [The Anatomy of a Project](https://www.aem.live/developer/anatomy-of-a-project)
-3. [Web Performance](https://www.aem.live/developer/keeping-it-100)
-4. [Markup, Sections, Blocks, and Auto Blocking](https://www.aem.live/developer/markup-sections-blocks)
+- Code: https://github.com/MMyles-Adobe/archon-s2hub
+- Authoring: https://da.live/#/mmyles-adobe/archon-s2hub
+- Content source: https://content.da.live/mmyles-adobe/archon-s2hub/
+- Preview: https://main--archon-s2hub--mmyles-adobe.aem.page/
+- Published: https://main--archon-s2hub--mmyles-adobe.aem.live/
+- Upstream: https://github.com/adobe/spectrum-hub
 
-## Installation
+The initial Hub source import is commit
+`c37d9cd29fe3de7c4d3fc91d8c5f2e23733e50a8`. The Git remote `origin` points to
+the pilot; `upstream` points to Spectrum Hub. Importing source locally does not
+deploy code or change DA content.
 
-```sh
-npm i
+## Run the pilot locally
+
+```bash
+nvm install
+nvm use
+npm ci
+npm run dev
 ```
 
-## Linting
+Open http://localhost:3000/. The development command serves local Hub code with
+content from the pilot preview. It does not publish content, push code, or stop
+an existing server. If port 3000 is occupied, use `npm run dev -- --port 3001`.
 
-```sh
-npm run lint
+To review a sample pattern without changing DA, run `npm run dev:sample` instead
+and open http://localhost:3000/pilot/empty-states. This mounts the local sample
+under `/pilot` only; other content still comes from the pilot preview. The
+sample disables navigation through page metadata because the tutorial does not
+install Hub-compatible navigation fragments. It is not published to DA or EDS.
+
+If an Adobe npm mirror prevents installation, the locked dependencies are
+available publicly. Use the following command without changing global npm
+settings or disabling certificate verification:
+
+```bash
+NODE_USE_SYSTEM_CA=1 npm ci --registry=https://registry.npmjs.org/ --@adobe:registry=https://registry.npmjs.org/
 ```
 
-## Local development
+The tutorial's `/nav` and `/footer` documents are not the Hub navigation
+fragments. Hub expects `/fragments/nav/header`, `/fragments/nav/footer`, and
+`/fragments/nav/site-nav`. Authors must create and preview compatible pilot
+documents before the shared site can reproduce the Hub navigation. See
+[Content authoring](./docs/CONTENT_AUTHORING.md) for metadata and block markup.
 
-1. Create a new repository based on the `aem-boilerplate` template
-1. Add the [AEM Code Sync GitHub App](https://github.com/apps/aem-code-sync) to the repository
-1. Install the [AEM CLI](https://github.com/adobe/helix-cli): `npm install -g @adobe/aem-cli`
-1. Start AEM Proxy: `aem up` (opens your browser at `http://localhost:3000`)
-1. Open the `archon-s2hub` directory in your favorite IDE and start coding :)
+The tutorial homepage also uses the boilerplate `cards` block. Hub uses `card`
+and a different loader, so migrate that authored content before using the
+tutorial homepage as a Hub acceptance test. The local sample avoids those
+boilerplate-only blocks.
+
+Keep pilot content suitable for public delivery. This site does not include
+Spectrum Hub's production CloudFront authentication and audience filtering.
+GitHub repository privacy and DA editing permissions do not make published
+pages private. Do not configure production IMS, Algolia indexing, scheduled
+jobs, or edge deployments for this pilot without a separate review.
+
+The imported Algolia publisher, component-extraction jobs, deployed smoke
+checks, and link crawler are restricted to `adobe/spectrum-hub` and skip this
+repository. Review their content sources, credentials, and targets before
+enabling pilot equivalents. The upstream deployed-test npm commands still
+default to the production Hub; do not run them for pilot acceptance testing.
+
+Code and content ship separately. Code changes require review before a push to
+the pilot repository; DA content requires its own preview and publish actions.
+Do not force-push or push pilot work to `upstream`.
+
+For the first shared pattern, an author can recreate the local example in DA
+with the same headings and a columns block. On that page, set `template` to
+`marketing`, and set `header`, `footer`, `sitenav`, and `pagenav` to `off` until
+the pilot navigation exists. Use a disposable draft path, preview it for review,
+and publish only after approval. The Hub code must be deployed to the pilot
+repository before remote preview can render Hub-specific blocks.
+
+## Local verification
+
+JavaScript and CSS lint, all three dependency-bundle builds, extraction tests,
+indexer tests, link-check unit tests, and focused workflow tests pass. Browser
+unit tests expose an unchanged upstream failure in
+`test/blocks/tabs.test.js`: manual keyboard activation selects `tab-2` where
+the test expects `tab-1`. The full suite is not green; resolve or review that
+failure before deployment. The local sample was checked in a desktop browser.
+
+One pilot rendering fix filters absent background images before inserting them
+into the page. Without it, pages without background metadata display literal
+`nullnull` text. The regression test is in `test/scripts/scripts.test.js`.
+
+## Upstream Spectrum Hub overview
+
+A unified view into the world of Spectrum, Adobe's design language.
+
+## Mission
+
+Our mission is to deepen Spectrum’s adoption through a multi‑platform website experience that goes beyond documentation. Showing the breadth of our multi-platform system through engaging, educating and inspiring moments. Delivering a future focused, scalable website able to adapt to the evolution of AI.
+
+## Developing
+
+Spectrum Hub is built on AEM Edge Delivery Services. Getting started takes a matter of seconds.
+
+Local development requires Node.js 24 and npm.
+
+1. Clone this project to your computer.
+1. Install the AEM CLI using your terminal: `sudo npm install -g @adobe/aem-cli`
+1. Run `nvm install` and `nvm use` to select the version in [`.nvmrc`](./.nvmrc).
+1. **Recommended:** Install common npm packages like linting and testing and project dependencies with `npm install`.
+1. Start the AEM CLI: `aem up` in the cloned folder.
+1. Open the cloned folder in your favorite code editor and build something amazing.
+
+## Contributing
+
+Start with [`CONTRIBUTING.md`](./CONTRIBUTING.md) and choose the workflow that matches your change:
+
+- **Engineers** change blocks, scripts, styles, tools, dependency pipelines, and
+edge code through GitHub.
+- **Authors** change pages, metadata, and fragments through Document Authoring
+(DA). Content-only changes do not require a GitHub pull request.
+
+[`CONTRIBUTING.md`](./CONTRIBUTING.md) covers both workflows in depth. Its
+[Find the owner of a change](./CONTRIBUTING.md#find-the-owner-of-a-change) table
+routes each area to its guide under [`docs/`](./docs/).
+
+### Contributor guides
+
+| Guide | Use it when |
+| --- | --- |
+| [Architecture](./docs/ARCHITECTURE.md) | Tracing the page lifecycle, production request path, or code ownership boundaries |
+| [Content authoring](./docs/CONTENT_AUTHORING.md) | Editing or debugging pages, metadata, fragments, preview, and publish behavior |
+| [Blocks](./docs/BLOCKS.md) | Adding or changing an EDS block |
+| [Tests](./docs/TESTS.md) | Choosing the correct local or CI validation |
+| [Styles](./docs/STYLES.md) | Adding CSS, tokens, color schemes, responsive behavior, or motion |
+| [Dependencies](./docs/DEPS.md) | Changing vendored code, extracted implementation data, mappings, or generated outputs |
+| [Tools](./docs/TOOLS.md) | Changing DA tools, Sidekick integrations, the scheduler, or the Algolia indexer |
+
+## Integrations
+
+### Spectrum Design Data
+
+[Spectrum Design Data](https://github.com/adobe/spectrum-design-data) is used to join the world of Spectrum with semantic HTML generated by AEM Edge Delivery Services.
+
+### Spectrum Web Components & React Spectrum
+
+[Spectrum Web Components](https://github.com/adobe/spectrum-web-components) and [React Spectrum](https://github.com/adobe/react-spectrum) have a daily GitHub Action that runs and feeds component statuses, available properties and sandbox implementations.
+
+### Algolia Search
+
+Semantic search and AI capabilities are provided by Algolia. The indexer runs as a GitHub Action every 12 hours.
+
+## Glossary
+
+| Term | Meaning |
+| --- | --- |
+| **AEM** | Adobe Experience Manager, the platform that hosts authoring and Edge Delivery Services |
+| **DA** | Document Authoring, where authors edit pages, metadata, and fragments |
+| **EDS** | Edge Delivery Services, which combines authored content with repository code and serves preview and published pages |
+| **Block** | A repository-owned component that decorates an authored table or generated block structure |
+| **Fragment** | A separately authored document reused inside other pages, such as navigation |
+| **RSP** | React Spectrum, the React implementation of the Spectrum design system |
+| **SWC** | Spectrum Web Components, the web component implementation of the Spectrum design system |
+| **CEM** | Custom Elements Manifest, the machine-readable source used to extract SWC component metadata |
+| **Sidekick** | The AEM browser extension that provides preview, publish, and custom authoring actions |
+
+## Accessibility considerations
+
+Spectrum Hub is committed to meeting WCAG 2.2 AA compliance. As a result, all content and features should be tested against these criteria.
+
+### Prefers Reduced Motion
+
+Spectrum Hub supports the `prefers-reduced-motion` media query. All animations and transitions should be tested with the setting enabled on a user OS level.
+
+#### Current implementations with this codebase
+
+- Sitenav
+  - when `prefers-reduced-motion` is true, the sitenav will not animate its width changes.
+- Header
+  - when `prefers-reduced-motion` is true, the skip link will not animate the slide transitions.
+- Pages
+  - when `prefers-reduced-motion` is true, any jump/anchor links will fallback to native browser behavior.
+  - when `prefers-reduced-motion` is true, the page will not animate its navigation view transition.
+- Cards
+  - when `prefers-reduced-motion` is true, cards will not animate their scale changes on hover.
+
+### Testing
+
+The core test command runs the Web Test Runner unit suite plus the Node-based
+extraction, indexer, and link-check unit suites:
+
+```bash
+npm test
+```
+
+To re-run tests automatically as you edit:
+
+```bash
+npm run test:watch
+```
+
+To watch a single file:
+
+```bash
+npm run test:file:watch -- test/scripts/scripts.test.js
+```
+
+Automated accessibility testing (axe-core WCAG 2.2 AA scans and accessibility-tree checks) is covered in [`test/a11y/README.md`](./test/a11y/README.md). `prefers-reduced-motion` behavior itself should be verified manually by enabling the setting at the OS level.
+
+To run Playwright/Axe automated accessibility tests:
+
+```bash
+npx playwright install chromium
+npm run test:a11y
+```
+
+To run the Pattern Library end-to-end smoke tests (which validate page contracts) in Chromium, Firefox, and WebKit:
+
+```bash
+npx playwright install chromium firefox webkit
+npm run test:e2e
+```
+
+The E2E command starts a local `aem up` server that proxies public
+content from the main `.aem.live` origin. Set
+`PLAYWRIGHT_BASE_URL=https://<branch>--spectrum-hub--adobe.aem.live` to test a
+deployed environment instead, or run `npm run test:e2e:deployed` to test what is
+published on `main`. Every E2E smoke test also fails on an uncaught
+exception, a `console.error`, a same-origin request that fails before receiving
+a response, or a same-origin response of 400 or worse. See
+[`docs/TESTS.md`](./docs/TESTS.md) for the route list, the blocks the page
+lifecycle composes automatically, fixture conventions, and guidance on choosing
+a test suite.
+
+## How engineering and content merge
+
+```mermaid
+flowchart LR
+    accTitle: How engineering and content merge in Spectrum Hub
+    accDescr: Content authors create and edit pages, metadata, and fragments in Document Authoring, while developers build and review blocks, JavaScript, CSS, and tools in the GitHub repository. Document Authoring previews or publishes content to Edge Delivery Services, which also receives deployed site code from GitHub and combines the two. Edge Delivery Services serves the AEM preview origin at branch--spectrum-hub--adobe.aem.page, which fronts the preview site at preview.spectrum.adobe.com, and the AEM published origin at main--spectrum-hub--adobe.aem.live, which fronts the production site at spectrum.adobe.com.
+
+    Authors["Content authors"]
+    Developers["Developers"]
+    GitHub["GitHub repository<br/>Blocks · JavaScript · CSS · Tools"]
+
+    subgraph AEM["AEM"]
+        DA["Document Authoring (DA)<br/>Pages · Metadata · Fragments"]
+        EDS["Edge Delivery Services (EDS)<br/>Combines content and site code"]
+        DA -->|"Preview or publish content"| EDS
+    end
+
+    Authors -->|"Create and edit content"| DA
+    Developers -->|"Build and review code"| GitHub
+    GitHub -->|"Deploy site code"| EDS
+
+    EDS --> PreviewOrigin["AEM preview origin<br/>branch--spectrum-hub--adobe.aem.page"]
+    PreviewOrigin --> PreviewSite["Preview site<br/>preview.spectrum.adobe.com"]
+
+    EDS --> PublishedOrigin["AEM published origin<br/>main--spectrum-hub--adobe.aem.live"]
+    PublishedOrigin --> ProductionSite["Production site<br/>spectrum.adobe.com"]
+
+    classDef people fill:#f5f5f5,stroke:#666,color:#222;
+    classDef content fill:#e9f4ff,stroke:#1473e6,color:#222;
+    classDef code fill:#f2edff,stroke:#7a4ce0,color:#222;
+    classDef delivery fill:#fff2df,stroke:#d06b00,color:#222;
+    classDef preview fill:#e5f3ff,stroke:#1473e6,color:#222;
+    classDef production fill:#e8f8ee,stroke:#268e53,color:#222;
+
+    class Authors,Developers people;
+    class DA content;
+    class GitHub code;
+    class EDS delivery;
+    class PreviewOrigin,PreviewSite preview;
+    class PublishedOrigin,ProductionSite production;
+```
+
+## Authoring and development lifecycle
+
+```mermaid
+flowchart TD
+    accTitle: Authoring and development lifecycle
+    accDescr: Content edits made in Document Authoring go straight to preview. Code developed in GitHub is committed and reviewed in a pull request before reaching preview. Preview combines content and code, and a review step asks whether the content and experience look correct. Content problems return to Document Authoring and code problems return to GitHub, while an approved page is published and served live. Feedback and new requirements from the live experience flow back into both Document Authoring and GitHub.
+
+    DA["Edit content in DA<br/>Pages · Metadata · Fragments"]
+    GitHub["Develop code in GitHub<br/>Blocks · Styles · Scripts · Tools"]
+
+    DA -->|"Content changes"| Preview
+    GitHub --> PR["Commit and review<br/>Pull request"]
+    PR -->|"Code changes"| Preview
+
+    subgraph AEM["AEM Edge Delivery Services"]
+        Preview["Preview the combined page<br/>Content + code"]
+        Publish["Publish the approved page"]
+        Live["Serve the live experience"]
+    end
+
+    Preview --> Review{"Content and experience<br/>look correct?"}
+
+    Review -->|"Content needs changes"| DA
+    Review -->|"Code needs changes"| GitHub
+    Review -->|"Approved"| Publish
+
+    Publish --> Live
+    Live --> Feedback["Feedback and new requirements"]
+    Feedback --> DA
+    Feedback --> GitHub
+
+    classDef content fill:#e9f4ff,stroke:#1473e6,color:#222;
+    classDef code fill:#f2edff,stroke:#7a4ce0,color:#222;
+    classDef delivery fill:#fff2df,stroke:#d06b00,color:#222;
+    classDef decision fill:#fff8d6,stroke:#b8860b,color:#222;
+    classDef feedback fill:#e8f8ee,stroke:#268e53,color:#222;
+
+    class DA content;
+    class GitHub,PR code;
+    class Preview,Publish,Live delivery;
+    class Review decision;
+    class Feedback feedback;
+```

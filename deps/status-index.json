@@ -1,0 +1,1494 @@
+{
+  "statuses": {
+    "available": {
+      "label": "Available",
+      "definition": "Ready for use. Fidelity may vary."
+    },
+    "experimental": {
+      "label": "Experimental",
+      "definition": "Available for exploration and testing, but not recommended for production use."
+    },
+    "not-available": {
+      "label": "Not available",
+      "definition": "Not currently available or applicable for this implementation or design library."
+    },
+    "deprecated": {
+      "label": "Deprecated",
+      "definition": "Still available today, but scheduled for removal."
+    },
+    "removed": {
+      "label": "Removed",
+      "definition": "No longer supported or maintained. Use an alternative component instead."
+    }
+  },
+  "implementations": {
+    "web": [
+      {
+        "id": "figma",
+        "label": "Figma"
+      },
+      {
+        "id": "rsp",
+        "label": "React Spectrum"
+      },
+      {
+        "id": "swc",
+        "label": "Spectrum Web Components"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Accordion",
+      "label": "Accordion",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "ActionBar",
+      "label": "Action Bar",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "ActionButton",
+      "label": "Action Button",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "ActionGroup",
+      "label": "Action Group",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable",
+            "upstreamName": "ActionButtonGroup"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "ActionMenu",
+      "label": "Action Menu",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available",
+            "secondary": "Use action button and menu"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "AlertBanner",
+      "label": "Alert Banner",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "not-available"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "AlertDialog",
+      "label": "Alert Dialog",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "upstreamName": "Dialog",
+            "secondary": "Use dialog component"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Avatar",
+      "label": "Avatar",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "AvatarGroup",
+      "label": "Avatar Group",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Badge",
+      "label": "Badge",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "BarPanelAndToolbar",
+      "label": "Bar Panel and Toolbar",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "not-available"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Breadcrumbs",
+      "label": "Breadcrumbs",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Button",
+      "label": "Button",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "ButtonGroup",
+      "label": "Button Group",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "Calendar",
+      "label": "Calendar",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available",
+            "secondary": "Use date and time component",
+            "figmaPageSource": "Date and time field",
+            "note": "No standalone Figma design; the Date and time field design covers it."
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Cards",
+      "label": "Cards",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available",
+            "figmaPageSource": "Cards (Asset)",
+            "note": "Cards has six Figma variant pages; Asset is the canonical one linked from See in Figma."
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable",
+            "upstreamName": "Card"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable",
+            "upstreamName": "Card"
+          }
+        }
+      }
+    },
+    {
+      "name": "Checkbox",
+      "label": "Checkbox",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "CheckboxGroup",
+      "label": "Checkbox Group",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "CloseButton",
+      "label": "Close Button",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "upstreamName": "Button",
+            "secondary": "In package, not RSP docs"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "CoachIndicator",
+      "label": "Coach Indicator",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "not-available"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "CoachMark",
+      "label": "Coach Mark",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "not-available",
+            "hasPage": false,
+            "note": "Docs page not yet written."
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "ColorArea",
+      "label": "Color Area",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "ColorField",
+      "label": "Color Field",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "not-available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "ColorHandle",
+      "label": "Color Handle",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable",
+            "secondary": "Use color components",
+            "page": "color-handle-and-loupe",
+            "upstreamName": "ColorSlider",
+            "note": "Built into color components instead."
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable",
+            "page": "color-handle-and-loupe",
+            "upstreamName": "ColorHandle"
+          }
+        }
+      }
+    },
+    {
+      "name": "ColorLoupe",
+      "label": "Color Loupe",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "not-available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable",
+            "secondary": "Use color components",
+            "page": "color-handle-and-loupe",
+            "upstreamName": "ColorSlider",
+            "note": "Built into color components instead."
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable",
+            "page": "color-handle-and-loupe",
+            "upstreamName": "ColorHandle"
+          }
+        }
+      }
+    },
+    {
+      "name": "ColorSlider",
+      "label": "Color Slider",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "ColorWheel",
+      "label": "Color Wheel",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "ComboBox",
+      "label": "Combo Box",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "ContextualHelp",
+      "label": "Contextual Help",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "DateAndTimeField",
+      "label": "Date and Time Field",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable",
+            "note": "React Spectrum splits this into separate Date Field, Date Picker, Date Range Picker, and Time Field components; this row mirrors their availability."
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "DatePicker",
+      "label": "Date Picker",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available",
+            "secondary": "Use date and time component"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Divider",
+      "label": "Divider",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "DropZone",
+      "label": "Drop Zone",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "FieldLabel",
+      "label": "Field Label",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable",
+            "secondary": "Use form component",
+            "upstreamName": "Form",
+            "note": "Built into Form components instead."
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Form",
+      "label": "Form",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "not-available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available",
+            "secondary": "N/A"
+          }
+        }
+      }
+    },
+    {
+      "name": "HelpText",
+      "label": "Help Text",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable",
+            "secondary": "Use form component",
+            "upstreamName": "Form",
+            "note": "Built into Form components instead."
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "IllustratedMessage",
+      "label": "Illustrated Message",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "InLineAlert",
+      "label": "In Line Alert",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable",
+            "upstreamName": "InlineAlert"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "KeyboardShortcut",
+      "label": "Keyboard Shortcut",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "not-available"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "LabeledValue",
+      "label": "Labeled Value",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available",
+            "secondary": "Reference documentation"
+          },
+          "rsp": {
+            "status": "available"
+          },
+          "swc": {
+            "status": "not-available",
+            "secondary": "N/A"
+          }
+        }
+      }
+    },
+    {
+      "name": "Link",
+      "label": "Link",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable",
+            "note": "Native anchor element with global CSS classes."
+          }
+        }
+      }
+    },
+    {
+      "name": "ListView",
+      "label": "List View",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Menu",
+      "label": "Menu",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "Meter",
+      "label": "Meter",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "NumberField",
+      "label": "Number Field",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Picker",
+      "label": "Picker",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Popover",
+      "label": "Popover",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "ProgressBar",
+      "label": "Progress Bar",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "ProgressCircle",
+      "label": "Progress Circle",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "RadioButton",
+      "label": "Radio Button",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable",
+            "upstreamName": "RadioGroup",
+            "note": "A radio button is not a standalone component; it mirrors Radio Group's availability."
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "RadioGroup",
+      "label": "Radio Group",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Rating",
+      "label": "Rating",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "not-available"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "ScrollBar",
+      "label": "Scroll Bar",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "not-available"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "SearchField",
+      "label": "Search Field",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "SegmentedControl",
+      "label": "Segmented Control",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "SelectBox",
+      "label": "Select Box",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable",
+            "upstreamName": "SelectBoxGroup"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "SideNavigation",
+      "label": "Side Navigation",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Alpha",
+            "upstreamName": "SideNav"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Slider",
+      "label": "Slider",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "StandardDialog",
+      "label": "Standard Dialog",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable",
+            "upstreamName": "Dialog",
+            "secondary": "Use dialog component"
+          },
+          "swc": {
+            "status": "not-available",
+            "secondary": "Use dialog"
+          }
+        }
+      }
+    },
+    {
+      "name": "StandardPanel",
+      "label": "Standard Panel",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "not-available"
+          },
+          "swc": {
+            "status": "not-available",
+            "secondary": "Use UEC"
+          }
+        }
+      }
+    },
+    {
+      "name": "StatusLight",
+      "label": "Status Light",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "Steplist",
+      "label": "Steplist",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "not-available"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Swatch",
+      "label": "Swatch",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable",
+            "upstreamName": "ColorSwatch"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "SwatchGroup",
+      "label": "Swatch Group",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable",
+            "upstreamName": "ColorSwatchPicker"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Switch",
+      "label": "Switch",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Table",
+      "label": "Table",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable",
+            "upstreamName": "TableView"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Tabs",
+      "label": "Tabs",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "Tag",
+      "label": "Tag",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "upstreamName": "TagGroup"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "TagField",
+      "label": "Tag Field",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "not-available"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "TagGroup",
+      "label": "Tag Group",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "TakeoverDialog",
+      "label": "Takeover Dialog",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "upstreamName": "Dialog"
+          },
+          "swc": {
+            "status": "not-available",
+            "secondary": "Use dialog"
+          }
+        }
+      }
+    },
+    {
+      "name": "TextArea",
+      "label": "Text Area",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available",
+            "secondary": "Use text field"
+          }
+        }
+      }
+    },
+    {
+      "name": "TextField",
+      "label": "Text Field",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "Thumbnail",
+      "label": "Thumbnail",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable",
+            "upstreamName": "Image",
+            "secondary": "Use image"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "Toast",
+      "label": "Toast",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    },
+    {
+      "name": "Tooltip",
+      "label": "Tooltip",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "available",
+            "context": "Stable"
+          }
+        }
+      }
+    },
+    {
+      "name": "TreeView",
+      "label": "Tree View",
+      "platforms": {
+        "web": {
+          "figma": {
+            "status": "available"
+          },
+          "rsp": {
+            "status": "available",
+            "context": "Stable"
+          },
+          "swc": {
+            "status": "not-available"
+          }
+        }
+      }
+    }
+  ]
+}

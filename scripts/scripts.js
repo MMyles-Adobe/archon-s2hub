@@ -1,217 +1,157 @@
 import {
-  loadHeader,
-  loadFooter,
-  decorateIcons,
-  decorateSections,
-  decorateBlocks,
-  decorateTemplateAndTheme,
-  waitForFirstImage,
-  loadSection,
-  loadSections,
-  loadCSS,
-  buildBlock,
-} from './aem.js';
+  loadArea,
+  getMetadata,
+  setConfig,
+  setScheme,
+  makePicture,
+  checkIms,
+  loadNav,
+} from './ak.js';
 
-if (window.trustedTypes && window.trustedTypes.createPolicy) {
-  const innerTT = window.trustedTypes.createPolicy('tt-inner', {
-    createHTML: (s) => s, // avoid stack overflow
+const hostnames = ['spectrum.adobe.com'];
+
+const linkBlocks = [
+  { 'action-button': '/tools/widgets/action-button' },
+  { search: '/tools/widgets/search-bar' },
+  { profile: '/tools/widgets/profile' },
+  { fragment: '/fragments/' },
+  { schedule: '/schedules/' },
+  { youtube: 'https://www.youtube' },
+];
+
+// Blocks that do not need their own styles
+const components = ['fragment', 'profile'];
+
+// Setup state of the environment
+const { host, port, search } = window.location;
+const searchParams = new URLSearchParams(search);
+const isStage = () => (host.includes('.aem.') && !host.endsWith('.live'));
+const cdnEnv = port === '8787'
+  || host.endsWith('adobe.com')
+  || searchParams.get('cdn') === 'mock'
+  || host.endsWith('workers.dev')
+  || host.endsWith('6.cloudfront.net');
+const env = (() => {
+  if (host.includes('local')) { return 'dev'; }
+  if (isStage()) { return 'stage'; }
+  return 'prod';
+})();
+
+// Setup basic state of the doc
+document.documentElement.classList.add('spectrum-edge');
+const isReturning = sessionStorage.getItem('session');
+if (isReturning) { document.body.classList.add('is-returning'); }
+const scheme = setScheme(document.body);
+const template = getMetadata('template');
+if (template !== 'marketing') {
+  document.documentElement.toggleAttribute('expand-sitenav', true);
+}
+const breadcrumbMeta = getMetadata('breadcrumbs');
+const heroMeta = getMetadata('hero');
+
+// Optionally build a page hero
+const buildAutoHero = () => {
+  if (heroMeta === 'auto' || template === 'component') {
+    const h1 = document.body.querySelector('h1');
+    const section = h1.closest('main > div');
+
+    const hero = document.createElement('div');
+    hero.className = 'page-hero';
+    hero.append(h1);
+
+    section.prepend(hero);
+    return hero;
+  }
+  return null;
+};
+
+// Optionally build breadcrumbs
+const buildBreadcrumbs = (hero) => {
+  // A hero does not guarantee breadcrumbs are wanted
+  if (breadcrumbMeta || template === 'component') {
+    // Breadcrumbs can be explicitly turned off
+    if (breadcrumbMeta === 'off') { return; }
+    // Initial scan for blocks requires a div
+    const breadcrumbs = document.createElement('div');
+    breadcrumbs.className = 'breadcrumbs';
+    // Prepand to either hero or the first section
+    const parent = hero || document.querySelector('main > div');
+    parent.prepend(breadcrumbs);
+  }
+};
+
+// How to decorate an area before loading it
+const decorateArea = ({ area = document }) => {
+  const eagerLoad = (parent, selector) => {
+    const img = parent.querySelector(selector);
+    if (!img) { return; }
+    img.removeAttribute('loading');
+    img.fetchPriority = 'high';
+  };
+
+  // If doc, do not allow decorating background
+  const select = area === document
+    ? 'main > div:first-child img:not([src*=".svg"])'
+    : 'img:not([src*=".svg"])';
+  eagerLoad(area, select);
+};
+
+const decorateBackground = async () => {
+  const currColor = scheme.replace('-scheme', '');
+
+  const getPic = (color) => {
+    const path = getMetadata(`${color}-bg`);
+    const opts = {
+      sizes: [1000, 2000],
+      class: `bg-img scheme-aware-pic ${color}-pic`,
+      loading: currColor === color ? 'eager' : 'lazy',
+    };
+    if (!path) { return null; }
+    return makePicture(path, opts);
+  };
+
+  const pics = [getPic('light'), getPic('dark')].filter(Boolean);
+  document.body.prepend(...pics);
+  pics.forEach((pic) => {
+    if (!pic) { return; }
+    const img = pic.querySelector('img');
+    img.decode()
+      .then(() => img.classList.add('decoded'))
+      .catch(() => img.classList.add('decoded'));
+  });
+};
+
+export async function loadPage() {
+  setConfig({
+    hostnames,
+    linkBlocks,
+    components,
+    decorateArea,
+    cdnEnv,
+    env,
+    locales: { '': { lang: 'en' } },
   });
 
-  window.trustedTypes.createPolicy('default', {
-    createHTML: (input, type, sink) => {
-      let processedInput = input;
-      if (/srcdoc\s*=/i.test(processedInput)) {
-        const doc = new DOMParser().parseFromString(innerTT.createHTML(processedInput), 'text/html');
-        doc.querySelectorAll('iframe[srcdoc]').forEach((el) => el.removeAttribute('srcdoc'));
-        processedInput = doc.body.innerHTML;
-      }
-      if (sink.includes('createContextualFragment') || sink.includes('Document write')) {
-        const doc = new DOMParser().parseFromString(innerTT.createHTML(processedInput), 'text/html');
-        doc.querySelectorAll('script').forEach((el) => el.remove());
-        processedInput = doc.body.innerHTML;
-      }
-      return processedInput;
-    },
-    createScriptURL: (input) => input,
-    createScript: (input) => input,
-  });
-}
+  // Preload IMS if returning visitor
+  await checkIms();
 
-/**
- * load fonts.css and set a session storage flag
- */
-async function loadFonts() {
-  await loadCSS(`${window.hlx.codeBasePath}/styles/fonts.css`);
-  try {
-    if (!window.location.hostname.includes('localhost')) sessionStorage.setItem('fonts-loaded', 'true');
-  } catch (e) {
-    // do nothing
-  }
-}
-
-/**
- * Turns `/widgets/...` links into widget blocks.
- * @param {Element} main The container element
- */
-function buildWidgetAutoBlocks(main) {
-  const widgetLinks = [...main.querySelectorAll('a[href*="/widgets/"]')];
-  widgetLinks.forEach((link) => {
-    if (link.closest('.widget')) return;
-    const newLink = link.cloneNode(true);
-    const widgetBlock = buildBlock('widget', { elems: [newLink] });
-    const p = link.closest('p');
-    if (
-      p
-      && p.querySelectorAll('a').length === 1
-      && p.querySelector('a') === link
-      && p.textContent.trim() === link.textContent.trim()
-    ) {
-      p.replaceWith(widgetBlock);
-    } else {
-      link.replaceWith(widgetBlock);
-    }
-  });
-}
-
-/**
- * Builds all synthetic blocks in a container element.
- * @param {Element} main The container element
- */
-function buildAutoBlocks(main) {
-  try {
-    // auto load `*/fragments/*` references
-    const fragments = [...main.querySelectorAll('a[href*="/fragments/"]')].filter((f) => !f.closest('.fragment'));
-    if (fragments.length > 0) {
-      // eslint-disable-next-line import/no-cycle
-      import('../blocks/fragment/fragment.js').then(({ loadFragment }) => {
-        fragments.forEach(async (fragment) => {
-          try {
-            const { pathname } = new URL(fragment.href);
-            const frag = await loadFragment(pathname);
-            fragment.parentElement.replaceWith(...frag.children);
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error('Fragment loading failed', error);
-          }
-        });
-      });
-    }
-    buildWidgetAutoBlocks(main);
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Auto Blocking failed', error);
-  }
-}
-
-/**
- * Decorates formatted links to style them as buttons.
- * @param {HTMLElement} main The main container element
- */
-function decorateButtons(main) {
-  main.querySelectorAll('p a[href]').forEach((a) => {
-    a.title = a.title || a.textContent;
-    const p = a.closest('p');
-    const text = a.textContent.trim();
-
-    // quick structural checks
-    if (a.querySelector('img') || p.textContent.trim() !== text) return;
-
-    // skip URL display links
-    try {
-      if (new URL(a.href).href === new URL(text, window.location).href) return;
-    } catch { /* continue */ }
-
-    // require authored formatting for buttonization
-    const strong = a.closest('strong');
-    const em = a.closest('em');
-    if (!strong && !em) return;
-
-    p.className = 'button-wrapper';
-    a.className = 'button';
-    if (strong && em) { // high-impact call-to-action
-      a.classList.add('accent');
-      const outer = strong.contains(em) ? strong : em;
-      outer.replaceWith(a);
-    } else if (strong) {
-      a.classList.add('primary');
-      strong.replaceWith(a);
-    } else {
-      a.classList.add('secondary');
-      em.replaceWith(a);
-    }
-  });
-}
-
-/**
- * Decorates the main element.
- * @param {Element} main The main element
- */
-// eslint-disable-next-line import/prefer-default-export
-export function decorateMain(main) {
-  decorateIcons(main);
-  buildAutoBlocks(main);
-  decorateSections(main);
-  decorateBlocks(main);
-  decorateButtons(main);
-}
-
-/**
- * Loads everything needed to get to LCP.
- * @param {Element} doc The container element
- */
-async function loadEager(doc) {
-  document.documentElement.lang = 'en';
-  decorateTemplateAndTheme();
-  const main = doc.querySelector('main');
-  if (main) {
-    decorateMain(main);
-    document.body.classList.add('appear');
-    await loadSection(main.querySelector('.section'), waitForFirstImage);
+  if (isReturning) {
+    await loadNav();
   }
 
-  try {
-    /* if desktop (proxy for fast connection) or fonts already loaded, load fonts.css */
-    if (window.innerWidth >= 900 || sessionStorage.getItem('fonts-loaded')) {
-      loadFonts();
-    }
-  } catch (e) {
-    // do nothing
-  }
+  decorateBackground();
+
+  // Auto blocks
+  const hero = buildAutoHero();
+  buildBreadcrumbs(hero);
+
+  await loadArea();
 }
+await loadPage();
 
-/**
- * Loads everything that doesn't need to be delayed.
- * @param {Element} doc The container element
- */
-async function loadLazy(doc) {
-  loadHeader(doc.querySelector('body > header'));
-
-  const main = doc.querySelector('main');
-  await loadSections(main);
-
-  const { hash } = window.location;
-  const element = hash ? doc.getElementById(hash.substring(1)) : false;
-  if (hash && element) element.scrollIntoView();
-
-  loadFooter(doc.querySelector('body > footer'));
-
-  loadCSS(`${window.hlx.codeBasePath}/styles/lazy-styles.css`);
-  loadFonts();
-}
-
-/**
- * Loads everything that happens a lot later,
- * without impacting the user experience.
- */
-function loadDelayed() {
-  import('./consent-check.js');
-  // load anything that can be postponed to the latest here
-}
-
-async function loadPage() {
-  await loadEager(document);
-  await loadLazy(document);
-  loadDelayed();
-}
-
-loadPage();
+(function da() {
+  const hasPreview = searchParams.has('dapreview');
+  if (hasPreview) { import('../tools/da/da.js').then((mod) => mod.default(loadPage)); }
+  const hasQE = searchParams.has('quick-edit');
+  if (hasQE) { import('../tools/quick-edit/quick-edit.js').then((mod) => mod.default()); }
+}());

@@ -1,30 +1,71 @@
 {
-  "name": "@adobe/aem-boilerplate",
-  "private": true,
-  "version": "1.3.0",
-  "description": "Starter project for Adobe Helix",
+  "name": "spectrum-hub",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Powerfully simple experiences.",
   "scripts": {
+    "dev": "aem up --url https://main--archon-s2hub--mmyles-adobe.aem.page --no-open --stop-other=false",
+    "dev:sample": "npm run dev -- --html-folder docs/pilot-content --html-mount /pilot",
     "lint:js": "eslint .",
-    "lint:css": "stylelint \"blocks/**/*.css\" \"styles/*.css\"",
+    "lint:css": "stylelint blocks/**/*.css styles/*.css",
     "lint": "npm run lint:js && npm run lint:css",
-    "lint:fix": "npm run lint:js -- --fix && npm run lint:css -- --fix"
+    "test": "npm run test:unit; e1=$?; npm run test:extractions; e2=$?; npm run test:indexer; e3=$?; npm run test:links:unit; e4=$?; exit $((e1 | e2 | e3 | e4))",
+    "test:unit": "wtr --config ./web-test-runner.config.mjs --node-resolve --port=2000 --coverage --concurrent-browsers 4",
+    "test:extractions": "node --test test/extractions/*.node.test.js",
+    "test:indexer": "node --test test/indexer/*.node.test.js",
+    "test:links:unit": "node --test test/link-check/lib/*.node.test.js",
+    "test:watch": "npm run test:unit -- --watch",
+    "test:file": "wtr --node-resolve --port=2000 --coverage",
+    "test:file:watch": "wtr --config ./web-test-runner.config.mjs --node-resolve --port=2000 --coverage --watch",
+    "test:a11y": "playwright test",
+    "test:e2e": "playwright test --config=playwright.smoke.config.js",
+    "test:e2e:ui": "playwright test --config=playwright.smoke.config.js --ui",
+    "test:e2e:deployed": "PLAYWRIGHT_BASE_URL=${PLAYWRIGHT_BASE_URL:-https://main--spectrum-hub--adobe.aem.live} playwright test --config=playwright.smoke.config.js",
+    "test:links:local": "playwright test --config=playwright.link-check.config.js",
+    "test:links:deployed": "LINKCHECK_BASE_URL=${LINKCHECK_BASE_URL:-https://main--spectrum-hub--adobe.aem.live} playwright test --config=playwright.link-check.config.js",
+    "build:lit": "esbuild --format=esm --minify ./deps/lit/src/index.js --bundle --outfile=./deps/lit/dist/index.js",
+    "build:turndown": "esbuild --format=esm --minify ./deps/turndown/src/index.js --bundle --outfile=./deps/turndown/dist/index.js",
+    "build:components": "node deps/components/build.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/adobe/aem-boilerplate.git"
+    "url": "git+https://github.com/adobe/spectrum-hub.git"
   },
   "author": "Adobe",
   "license": "Apache License 2.0",
-  "bugs": {
-    "url": "https://github.com/adobe/aem-boilerplate/issues"
+  "engines": {
+    "node": ">=24.22.1 <25"
   },
-  "homepage": "https://github.com/adobe/aem-boilerplate#readme",
+  "bugs": {
+    "url": "https://github.com/adobe/spectrum-hub/issues"
+  },
+  "homepage": "https://github.com/adobe/spectrum-hub#readme",
   "devDependencies": {
-    "@babel/eslint-parser": "7.29.9",
-    "eslint": "8.57.1",
-    "eslint-config-airbnb-base": "15.0.0",
-    "eslint-plugin-import": "2.32.0",
-    "stylelint": "17.16.0",
-    "stylelint-config-standard": "40.0.0"
+    "@adobe/aem-cli": "^16.22.16",
+    "@adobe/eslint-config-helix": "^3.0.33",
+    "@axe-core/playwright": "^4.11.3",
+    "@esm-bundle/chai": "4.3.4-fix.0",
+    "@playwright/test": "^1.60.0",
+    "@web/dev-server-import-maps": "^0.3.0",
+    "@web/test-runner": "^1.0.0",
+    "@web/test-runner-commands": "1.0.1",
+    "chai": "6.3.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-chai-friendly": "^1.1.0",
+    "eslint-plugin-import": "^2.32.0",
+    "globals": "^17.14.0",
+    "sinon": "^22.0.0",
+    "stylelint": "^17.1.0",
+    "stylelint-config-standard": "^40.0.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@adobe/spectrum-wc": "2.0.0-beta.6",
+    "algoliasearch": "^5.61.0",
+    "esbuild": "^0.28.0",
+    "lit": "^3.3.1",
+    "node-html-parser": "^9.0.6",
+    "turndown": "^7.2.4",
+    "turndown-plugin-gfm": "^1.0.2"
   }
 }

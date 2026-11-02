@@ -1,0 +1,551 @@
+.status-table {
+  --status-table-border-width: 1px;
+  --status-table-dot-size: 10px;
+  --status-table-cell-padding-block: 18px;
+  --status-table-cell-padding-inline: 20px;
+
+  container-type: inline-size;
+  container-name: status-table-wrapper;
+  margin-block: var(--s2-spacing-500) var(--s2-spacing-1000);
+
+  .status-table-table {
+    inline-size: 100%;
+    position: relative;
+    margin-block-start: var(--s2-spacing-600);
+
+    /* Read by syncHeaderAccessibility(); flipped to 1 in the container query below, so
+       CSS stays the single source of truth for where the sort headers become usable. */
+    --status-table-headers-visible: 0;
+  }
+
+  /*
+   * Stacked layout for small screens: the row becomes a two-column grid, and each cell
+   * subgrids onto it so every status sits beside its column-header label in one shared
+   * label column. The labels come from JS (.status-table-cell-label) because the thead
+   * itself is clipped out of view here.
+   */
+  thead {
+    /* hides the thead visually on small screens without breaking a11y (WCAG 1.3.1) */
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    display: grid;
+
+    /* even halves; the second track subtracts the gap so it doesn't overflow the row */
+    grid-template-columns: 50% calc(50% - var(--s2-spacing-300));
+    column-gap: var(--s2-spacing-300);
+    border: var(--status-table-border-width) solid var(--s2-gray-300);
+
+    &:first-child {
+      border-start-start-radius: var(--s2-corner-radius-300);
+      border-start-end-radius: var(--s2-corner-radius-300);
+    }
+
+    &:last-child {
+      border-end-start-radius: var(--s2-corner-radius-300);
+      border-end-end-radius: var(--s2-corner-radius-300);
+    }
+
+    & + tr {
+      border-block-start: 0;
+    }
+  }
+
+  tbody th,
+  tbody td {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
+    padding-block: var(--s2-spacing-300);
+    padding-inline: var(--s2-spacing-300);
+  }
+
+  tbody th {
+    text-align: start;
+    font-weight: var(--s2-component-m-bold-font-weight);
+    color: var(--s2-gray-900);
+  }
+
+  /* explicit tracks so the label column stays aligned down every cell of the row */
+  .status-table-cell-label {
+    grid-column: 1;
+    font-weight: var(--s2-component-m-bold-font-weight);
+    color: var(--s2-gray-800);
+  }
+
+  .status-table-cell-value {
+    grid-column: 2;
+  }
+
+  /* colored dot + unified label */
+  .status-table-status-light {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2-spacing-100);
+    color: var(--s2-gray-900);
+    font-weight: var(--s2-component-m-medium-font-weight);
+  }
+
+  .status-table-dot {
+    inline-size: var(--status-table-dot-size);
+    block-size: var(--status-table-dot-size);
+    border-radius: 50%;
+    background-color: var(--status-color);
+    flex: 0 0 auto;
+  }
+
+  .status-table-label {
+    position: relative;
+    display: flex;
+    align-items: center;
+    color: var(--status-color);
+  }
+
+  .status-table-link .status-table-label::after {
+    position: absolute;
+    content: '';
+    mask-image: url('/img/icons/s2-icon-chevronright-20-n.svg');
+    background-color: var(--status-color);
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+    inline-size: 12px;
+    block-size: 12px;
+    transition: transform 0.15s ease;
+    inset-inline-start: calc(100% + 4px);
+  }
+
+  /* Implementation cells for components link to their internal component page. */
+  tbody td:has(.status-table-link) {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .status-table-link {
+    display: inline-flex;
+    text-decoration: none;
+    color: inherit;
+    align-items: center;
+    outline: none;
+  }
+
+  .status-table-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+  }
+
+  .status-table-link:hover::after,
+  .status-table-link:focus-visible::after {
+    background-color: rgb(from var(--status-color) r g b / 10%);
+  }
+
+  .status-table-link:hover .status-table-label::after {
+    transform: translateX(3px);
+  }
+
+  .status-table-link:focus-visible::after {
+    outline: var(--se-focus-indicator-width) solid var(--s2-blue-800);
+    outline-offset: var(--s2-spacing-75);
+    border-radius: 9px;
+  }
+
+  /* secondary guidance line beneath the badge — hidden until the "Show details" toggle */
+  .status-table-secondary {
+    display: block;
+    margin-block-start: var(--s2-spacing-50);
+    color: var(--s2-gray-600);
+    font-size: var(--s2-component-s-regular-font-size);
+    line-height: var(--s2-component-s-regular-line-height);
+  }
+
+  /* rows filtered out by search, and cells in columns toggled off, drop out entirely.
+     attribute-selector specificity beats the responsive display rules below. */
+  tbody tr[hidden] {
+    display: none;
+  }
+
+  [data-col][hidden] {
+    display: none;
+  }
+
+  @media (width >= 900px) {
+    overflow: auto;
+    padding: var(--s2-spacing-100);
+    margin: calc(var(--s2-spacing-100) * -1);
+    min-inline-size: 150px; /* ✨ magic number */
+  }
+
+  @container status-table-wrapper (width >= 650px) {
+    .status-table-table {
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: fixed;
+
+      /* the thead is back in view below, so the sort headers become operable */
+      --status-table-headers-visible: 1;
+    }
+
+    thead {
+      display: table-header-group;
+      position: static;
+      inline-size: auto;
+      block-size: auto;
+      overflow: visible;
+      clip-path: none;
+      white-space: normal;
+    }
+
+    tbody tr {
+      display: table-row;
+      border: 0;
+    }
+
+    tbody th,
+    tbody td {
+      display: table-cell;
+      vertical-align: top;
+      padding-block: var(--status-table-cell-padding-block);
+      padding-inline: var(--status-table-cell-padding-inline);
+      background-color: transparent !important;
+    }
+
+    /* the real thead is back in view, so the per-cell labels are redundant */
+    .status-table-cell-label {
+      display: none;
+    }
+
+    thead th {
+      text-align: start;
+      font-weight: var(--s2-component-m-bold-font-weight);
+      color: var(--s2-gray-700);
+      padding: var(--s2-spacing-200) var(--s2-spacing-300);
+      border: none;
+      background-color: light-dark(rgb(from var(--s2-gray-25) r g b / 70%), rgb(from var(--s2-gray-1000) r g b / 12%));
+    }
+
+    th, td {
+      border-block-end: var(--status-table-border-width) solid var(--s2-gray-300);
+    }
+
+    thead tr th:first-child {
+      border-start-start-radius: var(--s2-corner-radius-300);
+      border-end-start-radius: var(--s2-corner-radius-300);
+    
+    }
+
+    thead tr th:last-child {
+     border-start-end-radius: var(--s2-corner-radius-300);
+     border-end-end-radius: var(--s2-corner-radius-300);
+    }
+
+    tbody tr:last-child td:last-child {
+      border-end-end-radius: var(--s2-corner-radius-300);
+     }
+
+    tbody tr:last-child th:first-child {
+      border-end-start-radius: var(--s2-corner-radius-300);
+    }
+  }
+
+  /* status definition cards — always visible, one per status present in the table */
+  .status-table-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2-spacing-300);
+    list-style: none;
+    margin-block: 0 var(--s2-spacing-800);
+    padding: 0;
+  }
+
+  .status-table-card {
+    flex: 1 1 240px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2-spacing-100);
+    padding: var(--s2-spacing-400);
+    border-radius: 24px;
+    max-inline-size: 200px;
+
+    /* tint the card with a faint wash of its own status color */
+    background-color: rgb(from var(--status-color) r g b / 10%);
+  }
+
+  .status-table-card-label {
+    font-weight: var(--s2-component-m-bold-font-weight);
+    color: var(--status-color);
+  }
+
+  /* the Not available status color is a mid-gray dot hue — read the label darker for contrast */
+  .status-table-card[data-status='not-available'] .status-table-card-label {
+    color: var(--s2-gray-700);
+  }
+
+  .status-table-card-definition {
+    color: var(--s2-gray-700);
+    font-size: var(--s2-component-s-regular-font-size);
+    line-height: var(--s2-component-s-regular-line-height);
+  }
+
+  /* toolbar — search, show-details toggle, column filter, and CSV export */
+  .status-table-toolbar {
+    display: flex;
+    flex-flow: column wrap;
+    gap: var(--s2-spacing-300);
+    margin-block-end: var(--s2-spacing-200);
+
+    @container status-table-wrapper (width >= 500px) {
+      flex-direction: row;
+      justify-content: space-between;
+    }
+  }
+
+  .status-table-toolbar-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2-spacing-300);
+
+    @container status-table-wrapper (width >= 500px) {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  .status-table-export {
+    max-inline-size: max-content;
+    outline: none;
+
+    &:focus-visible {
+      outline: var(--se-focus-indicator-width) solid var(--s2-blue-900);
+      outline-offset: var(--s2-spacing-50);
+      border-radius: 9px;
+    }
+  }
+
+  .status-table-search-wrap {
+    display: flex;
+    align-items: center;
+    flex: 1 1 32px;
+    max-inline-size: 360px;
+  }
+
+  /* icon-only button shown until the field is opened — mirrors .status-table-filter-button */
+  .status-table-search-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    inline-size: 32px;
+    block-size: var(--s2-component-m-height);
+    padding: 0;
+    border-radius: var(--s2-corner-radius-500);
+    background-color: transparent;
+    color: var(--s2-gray-800);
+    cursor: pointer;
+    outline: none;
+    border: none;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      mask-image: url('/img/icons/s2-icon-search-20-n.svg');
+      mask-repeat: no-repeat;
+      mask-position: center;
+      mask-size: contain;
+      background-color: currentcolor;
+      inline-size: 20px;
+      block-size: 20px;
+    }
+
+    &:hover {
+      background-color: rgb(from var(--s2-gray-1000) r g b / 12%);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--s2-blue-900);
+      outline-offset: var(--s2-spacing-50);
+      border-radius: 9px;
+    }
+  }
+
+  .status-table-search {
+    display: none;
+    flex: 1 1 auto;
+  }
+
+  .status-table-search-wrap.status-table-search-active {
+    .status-table-search-toggle {
+      display: none;
+    }
+
+    .status-table-search {
+      display: block;
+    }
+  }
+
+  /* sort: the "Sort by" control is shown only on small screens, where the stacked layout
+     hides the header row. On wide screens sorting rides on the clickable headers instead. */
+  .status-table-sort {
+    display: none; /* TODO: the filter is turned off (display: flex) until a future release */
+    align-items: end;
+    gap: var(--s2-spacing-100);
+  }
+
+  .status-table-sort-select {
+    min-inline-size: 150px;
+  }
+
+  .status-table-sort-direction {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 32px;
+    block-size: 32px;
+    padding: 0;
+    border: var(--status-table-border-width) solid var(--s2-gray-300);
+    border-radius: var(--s2-corner-radius-200, 8px);
+    background-color: transparent;
+    color: var(--s2-gray-800);
+    cursor: pointer;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      mask-image: url('/img/icons/s2-icon-sortup-20-n.svg');
+      mask-repeat: no-repeat;
+      mask-position: center;
+      mask-size: contain;
+      background-color: currentcolor;
+      inline-size: 20px;
+      block-size: 20px;
+    }
+
+    /* dedicated glyph per direction */
+    &[data-direction='ascending']::before {
+      mask-image: url('/img/icons/s2-icon-sortup-20-n.svg');
+    }
+
+    &[data-direction='descending']::before {
+      mask-image: url('/img/icons/s2-icon-sortdown-20-n.svg');
+    }
+  }
+
+  @media (width >= 900px) {
+    .status-table-sort {
+      display: none;
+    }
+  }
+
+  /* clickable sort headers — the wide-screen sort mechanism */
+  .status-table-sort-header {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2-spacing-100);
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .status-table-sort-header:focus-visible {
+    outline: var(--se-focus-indicator-width) solid var(--s2-blue-800);
+    outline-offset: var(--s2-spacing-75);
+    border-radius: 9px;
+  }
+
+  /* the glyph is decorative (aria-sort conveys the state): a muted neutral sort icon marks
+     every sortable column and brightens on hover/focus; the active column swaps in the
+     directional glyph at full strength. */
+  .status-table-sort-icon {
+    inline-size: 16px;
+    block-size: 16px;
+    mask-image: url('/img/icons/s2-icon-sort-20-n.svg');
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+    background-color: currentcolor;
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+
+  .status-table-sort-header:hover .status-table-sort-icon,
+  .status-table-sort-header:focus-visible .status-table-sort-icon {
+    opacity: 1;
+  }
+
+  thead th[data-sort='ascending'] .status-table-sort-icon,
+  thead th[data-sort='descending'] .status-table-sort-icon {
+    opacity: 1;
+  }
+
+  thead th[data-sort='ascending'] .status-table-sort-icon {
+    mask-image: url('/img/icons/s2-icon-sortup-20-n.svg');
+  }
+
+  thead th[data-sort='descending'] .status-table-sort-icon {
+    mask-image: url('/img/icons/s2-icon-sortdown-20-n.svg');
+  }
+
+  /* column filter: a button anchoring a popover of per-column checkboxes */
+  .status-table-filter-button {
+    anchor-name: --status-table-columns;
+
+    /* icon-only: label is visually hidden, so trim the text padding to a square */
+    &:has(.visually-hidden) {
+      padding-inline: var(--s2-spacing-100);
+    }
+
+    /* filter glyph tinted to the button's text color via mask (mirrors sitenav) */
+    &::before {
+      content: '';
+      display: inline-block;
+      mask-image: url('/img/icons/s2-icon-filter-20-n.svg');
+      mask-repeat: no-repeat;
+      mask-position: center;
+      mask-size: contain;
+      background-color: currentcolor;
+      inline-size: 20px;
+      block-size: 20px;
+    }
+  }
+
+  .status-table-filter-popover {
+    margin: 0;
+    padding: var(--s2-spacing-300);
+    border: var(--status-table-border-width) solid var(--s2-gray-300);
+    border-radius: var(--s2-corner-radius-300);
+    background-color: light-dark(var(--s2-gray-25), var(--s2-gray-50));
+    box-shadow: 0 2px 8px rgb(0 0 0 / 12%);
+    flex-direction: column;
+    gap: var(--s2-spacing-200);
+    min-inline-size: 200px;
+  }
+
+  /* Only claim `display` once open — otherwise an author display value would override
+     the UA `[popover]:not(:popover-open)` rule and leave the panel visible on load.
+     An open popover lives in the top layer, so it floats above the table and is never
+     clipped by the block's overflow scroll, even while the table is scrolled. */
+  .status-table-filter-popover:popover-open {
+    display: flex;
+  }
+
+  /* anchor the popover under its button where supported; otherwise the UA centers it */
+  @supports (position-area: bottom) {
+    .status-table-filter-popover {
+      inset: 0 -32px; /* TODO: magic numbers to roughly position our popover */
+      position-anchor: --status-table-columns;
+      position-area: bottom x-end;
+      margin-block-start: var(--s2-spacing-100);
+    }
+  }
+}

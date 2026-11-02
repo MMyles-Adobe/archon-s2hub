@@ -1,0 +1,16 @@
+{
+  "web": {
+    "figma": {
+      "status": "available"
+    },
+    "rsp": {
+      "status": "available",
+      "context": "Stable",
+      "upstreamName": "InlineAlert"
+    },
+    "swc": {
+      "status": "not-available"
+    }
+  },
+  "figmaPageId": "9953:42090"
+}

@@ -1,0 +1,52 @@
+{
+  "props": [
+    {
+      "property": "size",
+      "type": "\"S\" | \"M\" | \"L\" | \"XL\"",
+      "kind": "enum",
+      "values": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ],
+      "default": "'M'",
+      "description": "The size of the CloseButton."
+    },
+    {
+      "property": "staticColor",
+      "type": "\"white\" | \"black\" | \"auto\"",
+      "kind": "enum",
+      "values": [
+        "white",
+        "black",
+        "auto"
+      ],
+      "description": "The static color style to apply. Useful when the Button appears over a color background."
+    },
+    {
+      "property": "isDisabled",
+      "type": "boolean",
+      "kind": "boolean",
+      "values": [],
+      "description": "Whether the button is disabled.",
+      "inheritedFrom": "ButtonProps"
+    },
+    {
+      "property": "onPress",
+      "type": "(e: PressEvent) => void",
+      "kind": "unknown",
+      "values": [],
+      "description": "Handler that is called when the press is released over the target.",
+      "inheritedFrom": "PressEvents"
+    },
+    {
+      "property": "styles",
+      "type": "StylesProp",
+      "kind": "unknown",
+      "values": [],
+      "description": "Spectrum-defined styles, returned by the `style()` macro.",
+      "inheritedFrom": "StyleProps"
+    }
+  ]
+}

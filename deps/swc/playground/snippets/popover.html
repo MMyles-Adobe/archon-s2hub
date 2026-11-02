@@ -1,0 +1,39 @@
+<!-- Anchors through `for`; `accessible-label` names the dialog surface. -->
+<swc-button id="popover-trigger">Open popover</swc-button>
+<swc-popover
+  modal
+  accessible-label="Account settings"
+  placement="bottom"
+  offset="8"
+  should-flip
+  for="popover-trigger"
+>
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <swc-avatar
+        src="./images/avatar-preview.png"
+        alt=""
+        size="300"
+      ></swc-avatar>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <span class="swc-Title swc-Title--sizeS">Jess Lee</span>
+        <span class="swc-Detail swc-Detail--sizeS">Product designer</span>
+      </div>
+    </div>
+    <swc-divider size="s" style="inline-size:100%"></swc-divider>
+    <p class="swc-Body swc-Body--sizeS">
+      Manage your profile, notification preferences, and connected apps.
+    </p>
+    <swc-button-group align="end" size="s">
+      <swc-button
+        variant="secondary"
+        fill-style="outline"
+        size="s"
+        onclick="this.closest('swc-popover').open = false"
+      >
+        Dismiss
+      </swc-button>
+      <swc-button variant="accent" size="s">Open settings</swc-button>
+    </swc-button-group>
+  </div>
+</swc-popover>

@@ -1,0 +1,412 @@
+{
+  "Accordion": {
+    "interface": "AccordionProps"
+  },
+  "AccordionItem": {
+    "interface": "AccordionItemProps",
+    "file": "Accordion"
+  },
+  "AccordionItemHeader": {
+    "interface": "AccordionItemHeaderProps",
+    "file": "Accordion"
+  },
+  "AccordionItemPanel": {
+    "interface": "AccordionItemPanelProps",
+    "file": "Accordion"
+  },
+  "AccordionItemTitle": {
+    "interface": "AccordionItemTitleProps",
+    "file": "Accordion"
+  },
+  "ActionBar": {
+    "interface": "ActionBarProps"
+  },
+  "ActionButton": {
+    "interface": "ActionButtonProps"
+  },
+  "ActionButtonGroup": {
+    "interface": "ActionButtonGroupProps"
+  },
+  "ActionMenu": {
+    "interface": "ActionMenuProps"
+  },
+  "AlertDialog": {
+    "interface": "AlertDialogProps"
+  },
+  "AssetCard": {
+    "interface": "AssetCardProps",
+    "file": "Card"
+  },
+  "Avatar": {
+    "interface": "AvatarProps"
+  },
+  "AvatarGroup": {
+    "interface": "AvatarGroupProps"
+  },
+  "Badge": {
+    "interface": "BadgeProps"
+  },
+  "Breadcrumb": {
+    "interface": "BreadcrumbProps",
+    "file": "Breadcrumbs"
+  },
+  "Breadcrumbs": {
+    "interface": "BreadcrumbsProps"
+  },
+  "Button": {
+    "interface": "ButtonProps"
+  },
+  "ButtonGroup": {
+    "interface": "ButtonGroupProps"
+  },
+  "Calendar": {
+    "interface": "CalendarProps"
+  },
+  "Card": {
+    "interface": "CardProps"
+  },
+  "CardPreview": {
+    "interface": "CardPreviewProps",
+    "file": "Card"
+  },
+  "CardView": {
+    "interface": "CardViewProps"
+  },
+  "Cell": {
+    "interface": "CellProps",
+    "file": "TableView"
+  },
+  "Checkbox": {
+    "interface": "CheckboxProps"
+  },
+  "CheckboxGroup": {
+    "interface": "CheckboxGroupProps"
+  },
+  "ClearButton": {
+    "interface": "ClearButtonProps"
+  },
+  "CloseButton": {
+    "interface": "CloseButtonProps"
+  },
+  "CoachMark": {
+    "interface": "CoachMarkProps"
+  },
+  "CoachMarkTrigger": {
+    "interface": "CoachMarkTriggerProps",
+    "file": "CoachMark"
+  },
+  "CollectionCardPreview": {
+    "interface": "CardPreviewProps",
+    "file": "Card"
+  },
+  "ColorArea": {
+    "interface": "ColorAreaProps"
+  },
+  "ColorField": {
+    "interface": "ColorFieldProps"
+  },
+  "ColorSlider": {
+    "interface": "ColorSliderProps"
+  },
+  "ColorSwatch": {
+    "interface": "ColorSwatchProps"
+  },
+  "ColorSwatchPicker": {
+    "interface": "ColorSwatchPickerProps"
+  },
+  "ColorWheel": {
+    "interface": "ColorWheelProps"
+  },
+  "Column": {
+    "interface": "ColumnProps",
+    "file": "TableView"
+  },
+  "ComboBox": {
+    "interface": "ComboBoxProps"
+  },
+  "ComboBoxItem": {
+    "interface": "ComboBoxItemProps",
+    "file": "ComboBox"
+  },
+  "ContextualHelp": {
+    "interface": "ContextualHelpProps"
+  },
+  "ContextualHelpPopover": {
+    "interface": "ContextualHelpPopoverProps",
+    "file": "ContextualHelp"
+  },
+  "CustomDialog": {
+    "interface": "CustomDialogProps"
+  },
+  "DateField": {
+    "interface": "DateFieldProps"
+  },
+  "DatePicker": {
+    "interface": "DatePickerProps"
+  },
+  "DateRangePicker": {
+    "interface": "DateRangePickerProps"
+  },
+  "Dialog": {
+    "interface": "DialogProps"
+  },
+  "DialogContainer": {
+    "interface": "DialogContainerProps"
+  },
+  "DialogTrigger": {
+    "interface": "DialogTriggerProps"
+  },
+  "Disclosure": {
+    "interface": "DisclosureProps"
+  },
+  "DisclosurePanel": {
+    "interface": "DisclosurePanelProps",
+    "file": "Disclosure"
+  },
+  "DisclosureTitle": {
+    "interface": "DisclosureTitleProps",
+    "file": "Disclosure"
+  },
+  "Divider": {
+    "interface": "DividerProps"
+  },
+  "DragPreview": {
+    "interface": "DragPreviewProps"
+  },
+  "DropZone": {
+    "interface": "DropZoneProps"
+  },
+  "EditableCell": {
+    "interface": "EditableCellProps",
+    "file": "TableView"
+  },
+  "Form": {
+    "interface": "FormProps"
+  },
+  "FullscreenDialog": {
+    "interface": "FullscreenDialogProps"
+  },
+  "IllustratedMessage": {
+    "interface": "S2SpectrumIllustratedMessageProps"
+  },
+  "Image": {
+    "interface": "ImageProps"
+  },
+  "InlineAlert": {
+    "interface": "InlineAlertProps"
+  },
+  "LabeledValue": {
+    "interface": "LabeledValueProps<LabeledValueTypes"
+  },
+  "Link": {
+    "interface": "LinkProps"
+  },
+  "LinkButton": {
+    "interface": "LinkButtonProps",
+    "file": "Button"
+  },
+  "ListView": {
+    "interface": "ListViewProps"
+  },
+  "ListViewItem": {
+    "interface": "ListViewItemProps",
+    "file": "ListView"
+  },
+  "Menu": {
+    "interface": "MenuProps"
+  },
+  "MenuItem": {
+    "interface": "MenuItemProps",
+    "file": "Menu"
+  },
+  "Meter": {
+    "interface": "MeterProps"
+  },
+  "Modal": {
+    "interface": "ModalProps"
+  },
+  "NotificationBadge": {
+    "interface": "NotificationBadgeProps"
+  },
+  "NumberField": {
+    "interface": "NumberFieldProps"
+  },
+  "Picker": {
+    "interface": "PickerProps"
+  },
+  "PickerItem": {
+    "interface": "PickerItemProps",
+    "file": "TabsPicker"
+  },
+  "Popover": {
+    "interface": "PopoverDialogProps"
+  },
+  "PopoverBase": {
+    "interface": "PopoverProps",
+    "file": "Popover"
+  },
+  "ProductCard": {
+    "interface": "ProductCardProps",
+    "file": "Card"
+  },
+  "ProgressBar": {
+    "interface": "ProgressBarProps"
+  },
+  "ProgressCircle": {
+    "interface": "ProgressCircleProps"
+  },
+  "Radio": {
+    "interface": "RadioProps",
+    "file": "RadioGroup"
+  },
+  "RadioGroup": {
+    "interface": "RadioGroupProps"
+  },
+  "RangeCalendar": {
+    "interface": "RangeCalendarProps"
+  },
+  "RangeSlider": {
+    "interface": "RangeSliderProps"
+  },
+  "Row": {
+    "interface": "RowProps",
+    "file": "TableView"
+  },
+  "SearchField": {
+    "interface": "SearchFieldProps"
+  },
+  "SegmentedControl": {
+    "interface": "SegmentedControlProps"
+  },
+  "SegmentedControlItem": {
+    "interface": "SegmentedControlItemProps",
+    "file": "SegmentedControl"
+  },
+  "SelectBox": {
+    "interface": "SelectBoxProps",
+    "file": "SelectBoxGroup"
+  },
+  "SelectBoxGroup": {
+    "interface": "SelectBoxGroupProps"
+  },
+  "SideNav": {
+    "interface": "SideNavProps"
+  },
+  "SideNavHeader": {
+    "interface": "SideNavHeaderProps",
+    "file": "SideNav"
+  },
+  "SideNavItem": {
+    "interface": "SideNavItemProps",
+    "file": "SideNav"
+  },
+  "SideNavItemContent": {
+    "interface": "SideNavItemContentProps",
+    "file": "SideNav"
+  },
+  "SideNavItemLink": {
+    "interface": "SideNavItemLinkProps",
+    "file": "SideNav"
+  },
+  "SideNavPanel": {
+    "interface": "SideNavPanelProps"
+  },
+  "Skeleton": {
+    "interface": "SkeletonProps"
+  },
+  "SkeletonCollection": {
+    "interface": "SkeletonCollectionProps"
+  },
+  "Slider": {
+    "interface": "SliderProps"
+  },
+  "StatusLight": {
+    "interface": "StatusLightProps"
+  },
+  "Switch": {
+    "interface": "SwitchProps"
+  },
+  "Tab": {
+    "interface": "TabProps",
+    "file": "Tabs"
+  },
+  "TableBody": {
+    "interface": "TableBodyProps",
+    "file": "TableView"
+  },
+  "TableFooter": {
+    "interface": "TableFooterProps",
+    "file": "TableView"
+  },
+  "TableHeader": {
+    "interface": "TableHeaderProps",
+    "file": "TableView"
+  },
+  "TableView": {
+    "interface": "TableViewProps"
+  },
+  "TabPanel": {
+    "interface": "TabPanelProps",
+    "file": "Tabs"
+  },
+  "Tabs": {
+    "interface": "TabsProps"
+  },
+  "Tag": {
+    "interface": "TagProps",
+    "file": "TagGroup"
+  },
+  "TagGroup": {
+    "interface": "TagGroupProps"
+  },
+  "TextArea": {
+    "interface": "TextAreaProps",
+    "file": "TextField"
+  },
+  "TextField": {
+    "interface": "TextFieldProps"
+  },
+  "TextFieldBase": {
+    "interface": "TextFieldProps",
+    "file": "TextField"
+  },
+  "TimeField": {
+    "interface": "TimeFieldProps"
+  },
+  "ToastContainer": {
+    "interface": "ToastContainerProps",
+    "file": "Toast"
+  },
+  "ToggleButton": {
+    "interface": "ToggleButtonProps"
+  },
+  "ToggleButtonGroup": {
+    "interface": "ToggleButtonGroupProps"
+  },
+  "Tooltip": {
+    "interface": "TooltipProps"
+  },
+  "TooltipTrigger": {
+    "interface": "TooltipTriggerProps",
+    "file": "Tooltip"
+  },
+  "TreeView": {
+    "interface": "TreeViewProps"
+  },
+  "TreeViewItem": {
+    "interface": "TreeViewItemProps",
+    "file": "TreeView"
+  },
+  "TreeViewItemContent": {
+    "interface": "TreeViewItemContentProps",
+    "file": "TreeView"
+  },
+  "TreeViewLoadMoreItem": {
+    "interface": "TreeViewLoadMoreItemProps",
+    "file": "TreeView"
+  },
+  "UserCard": {
+    "interface": "UserCardProps",
+    "file": "Card"
+  }
+}

@@ -1,73 +1,169 @@
-# Contributing to Project Helix
+# Contributing to Spectrum Hub
 
-This project (like almost all of Project Helix) is an Open Development project and welcomes contributions from everyone who finds it useful or lacking.
+Spectrum Hub combines repository code with content authored in Adobe Document
+Authoring (DA). Choose the workflow that matches the source of truth for your
+change.
 
-## Code Of Conduct
+| Contributor | Use this workflow for |
+| --- | --- |
+| [Engineer](#engineer-workflow) | Blocks, JavaScript, CSS, tools, dependency pipelines, tests, and edge infrastructure |
+| [Author](#author-workflow) | Page copy, media, metadata, existing block content, and fragments |
 
-This project adheres to the Adobe [code of conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to cstaub at adobe dot com.
+All contributors must follow the [Adobe Code of Conduct](./CODE_OF_CONDUCT.md).
+External code contributors must also sign the
+[Adobe Open Source CLA](https://opensource.adobe.com/cla.html).
 
-## Contributor License Agreement
+## Engineer workflow
 
-All third-party contributions to this project must be accompanied by a signed contributor license. This gives Adobe permission to redistribute your contributions as part of the project. [Sign our CLA](http://opensource.adobe.com/cla.html)! You only need to submit an Adobe CLA one time, so if you have submitted one previously, you are good to go!
+Engineering changes are made in Git and reviewed through a GitHub pull request.
+Most block and page work can be developed without service credentials.
 
-## Things to Keep in Mind
+### Set up the repository
 
-This project uses a **commit then review** process, which means that for approved maintainers, changes can be merged immediately, but will be reviewed by others.
-
-For other contributors, a maintainer of the project has to approve the pull request.
-
-# Before You Contribute
-
-* Check that there is an existing issue in GitHub issues
-* Check if there are other pull requests that might overlap or conflict with your intended contribution
-
-# How to Contribute
-
-1. Fork the repository
-2. Make some changes on a branch on your fork
-3. Create a pull request from your branch
-
-In your pull request, outline:
-
-* What the changes intend
-* How they change the existing code
-* If (and what) they breaks
-* Start the pull request with the GitHub issue ID, e.g. #123
-
-Lastly, please follow the [pull request template](.github/pull_request_template.md) when submitting a pull request!
-
-Each commit message that is not part of a pull request:
-
-* Should contain the issue ID like `#123`
-* Can contain the tag `[trivial]` for trivial changes that don't relate to an issue
-
-
-
-## Coding Styleguides
-
-We enforce a coding styleguide using `eslint`. As part of your build, run `npm run lint` to check if your code is conforming to the style guide. We do the same for every PR in our CI, so PRs will get rejected if they don't follow the style guide.
-
-You can fix some of the issues automatically by running `npx eslint . --fix`.
-
-## Commit Message Format
-
-This project uses a structured commit changelog format that should be used for every commit. Use `npm run commit` instead of your usual `git commit` to generate commit messages using a wizard.
+Install [nvm](https://github.com/nvm-sh/nvm), then run:
 
 ```bash
-# either add all changed files
-$ git add -A
-# or selectively add files
-$ git add package.json
-# then commit using the wizard
-$ npm run commit
+nvm install
+nvm use
+npm ci
+npx aem up
 ```
 
-# How Contributions get Reviewed
+`nvm install` reads the version from [`.nvmrc`](./.nvmrc), currently Node.js 24, so the
+version is never typed by hand. `aem up` serves local code at `http://localhost:3000` and
+proxies authored preview content.
 
-One of the maintainers will look at the pull request within one week. Feedback on the pull request will be given in writing, in GitHub.
+Install Chromium before running Playwright accessibility or link tests:
 
-# Release Management
+```bash
+npx playwright install chromium
+```
 
-The project's committers will release to the [Adobe organization on npmjs.org](https://www.npmjs.com/org/adobe).
-Please contact the [Adobe Open Source Advisory Board](https://git.corp.adobe.com/OpenSourceAdvisoryBoard/discuss/issues) to get access to the npmjs organization.
+An `.env` file is needed only for workflows that call configured services, such
+as an Algolia indexer dry run. Copy `.env.example` to an untracked `.env` and
+use development credentials. Never commit credentials.
 
+### Find the owner of a change
+
+| Change | Start here |
+| --- | --- |
+| Page lifecycle, global loading, or production request flow | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) |
+| Block behavior or authored block markup | [`docs/BLOCKS.md`](./docs/BLOCKS.md) |
+| CSS, tokens, color schemes, responsive behavior, or motion | [`docs/STYLES.md`](./docs/STYLES.md) |
+| Authored pages, metadata, fragments, or preview behavior | [`docs/CONTENT_AUTHORING.md`](./docs/CONTENT_AUTHORING.md) |
+| Test selection or CI reproduction | [`docs/TESTS.md`](./docs/TESTS.md) |
+| Vendored code, implementation data, mappings, or generated output | [`docs/DEPS.md`](./docs/DEPS.md) |
+| DA tools, Sidekick actions, scheduler, or Algolia indexer | [`docs/TOOLS.md`](./docs/TOOLS.md) |
+
+Keep behavior with its closest owner. Block-specific behavior belongs in the
+block, not in `scripts/scripts.js` or `scripts/ak.js`. General utilities belong
+in `scripts/`; operational tooling belongs in `tools/`.
+
+### Your first engineering change
+
+1. Start from an issue or Jira ticket when the change requires one.
+2. Create a branch, and choose a small, representative page for validation.
+
+    i. if possible, keep the branch name to 8 characters or fewer to avoid browser console errors from IMS (though this isn't a blocker)
+3. Read the guide for the area you are changing — most often
+[`docs/BLOCKS.md`](./docs/BLOCKS.md) or [`docs/DEPS.md`](./docs/DEPS.md).
+[Find the owner of a change](#find-the-owner-of-a-change) maps every area to its guide.
+4. Inspect the authored HTML shape before changing a block.
+5. Add or update the focused test that describes the intended behavior.
+6. Make the smallest source change and keep any generated output with its generator change.
+7. Run the minimum validation for the files changed, using [`docs/TESTS.md`](./docs/TESTS.md#what-to-run).
+8. Run `aem up` and verify the representative page in a browser.
+9. Push the branch and verify `https://<branch>--spectrum-hub--adobe.aem.live/<path>`, the
+same host the pull request template asks reviewers to test. The matching
+`<branch>--spectrum-hub--adobe.aem.page` preview host is gated behind Sidekick authorization.
+10. Open a pull request and complete the repository PR template with validation steps, accessibility results, and screenshots when applicable.
+
+**Non-blocking note about branch naming:** IMS validates the branch preview's URI
+against a pattern that accommodates only 8 characters in the branch segment, so a longer
+name produces a preview host IMS rejects. Sign-in then fails on the branch preview with
+CORS errors, while the same code signs in normally on localhost and in production. The
+failure looks like a code problem and is not one. However, the browser console errors will
+not block your work.
+
+Conventional branch names are almost always too long: `feat/add-banner` and
+`fix-sitenav-focus` both exceed the limit, and a `/` becomes a `-` in the preview host
+rather than being dropped. Prefer a short slug such as `sitenav`, `a11y-ci`, or `jira-159`,
+particularly if you need to validate an IMS change.
+
+### Validation
+
+Start with focused checks while iterating. Before requesting review, run every
+independent suite affected by the change.
+
+```bash
+npm test
+npm run test:a11y
+npm run lint
+```
+
+`npm test` is the core suite, not every repository check. Accessibility,
+full-site link crawls, and edge-package tests run separately. New or changed
+blocks also need their Playwright accessibility spec and manual keyboard and
+screen-reader review.
+
+Never edit generated files directly. Change their source of truth, run the script that
+writes the file, and review generated additions, removals, and renames.
+[`deps/README.md`](./deps/README.md#generated-files) lists every generated path with the
+generator that produces it.
+
+## Author workflow
+
+Content-only changes are made in DA and do not require a Git branch or pull
+request. DA access and EDS author/publish permissions are separate from GitHub access.
+
+### Work in DA
+
+Use DA for:
+
+- page copy, headings, links, and media
+- rows and cells for an existing block
+- page metadata
+- shared fragments, including navigation content
+
+For a content change:
+
+1. Open the page or fragment in the Spectrum Hub DA workspace.
+2. Make the smallest content, metadata, or existing block-structure change.
+3. Preview the page and verify the combined content and repository code.
+
+    i. `preview.spectrum.adobe.com` is gated behind Adobe VPN to preview your content changes,
+and also is only the code behavior or functionality that is found in the `main` branch.
+4. Check links, responsive layout, light and dark schemes, and relevant accessibility behavior.
+5. If a shared fragment changed, verify more than one consuming page.
+6. Use the Sidekick or DA publish action after approval.
+7. Verify the published AEM page and `https://spectrum.adobe.com/<path>` when the page is public.
+
+Read [`docs/CONTENT_AUTHORING.md`](./docs/CONTENT_AUTHORING.md) for metadata,
+fragments, environments, audience-aware content, and authoring tools.
+
+### When an author needs an engineer
+
+Open an engineering issue instead of inventing new markup when a request needs:
+
+- a new block or a change to block behavior
+- JavaScript or CSS
+- a new metadata key or value
+- a new authoring tool or Sidekick action
+- changes to authentication, audience filtering, search, or generated data
+
+Include the DA or preview URL, the desired behavior, representative content,
+screenshots when visual output matters, and the affected audience. This gives
+the engineer enough context to reproduce the authored state locally.
+
+## Pull request expectations
+
+- Keep pull requests focused on one coherent change.
+- Link the related GitHub issue or include the Jira ticket identifier without
+linking to private Jira content.
+- Describe what changed, why it changed, and how reviewers can verify it.
+- Include the branch preview URL for page-facing changes. That URL only supports IMS
+sign-in when the branch name is 8 characters or fewer (see
+[Your first engineering change](#your-first-engineering-change)).
+- Record manual accessibility testing for interactive or semantic changes.
+- Do not include secrets, private content, or internal credentials in commits,
+screenshots, logs, or pull request text.

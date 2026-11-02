@@ -1,0 +1,179 @@
+---
+name: conventional-commits
+description: Use when committing code changes, writing commit messages, or formatting git history. Creates conventional commit messages following best conventions. Follows conventional commits specification.
+license: MIT
+metadata:
+  version: '1.0.0'
+---
+
+# Conventional Commit Messages
+
+Follow these conventions when creating commits.
+
+## Prerequisites
+
+Commit only when the user or the active platform workflow explicitly requests it.
+Before committing, inspect the current branch and working tree:
+
+```zsh
+# Check current branch
+git branch --show-current
+git status --short
+```
+
+If you're on `main`, create a new branch first:
+
+```zsh
+# Create and switch to a new branch
+git checkout -b <short-description>
+```
+
+Branch naming needs to be short to fit URL length constraints.
+Respect the environment's branch and worktree management. Do not create or switch
+branches with raw Git commands unless the user explicitly requests it and the
+active workflow permits it. If the current branch is unsuitable for a commit,
+always stop and ask for guidance instead of changing repository state.
+
+## Format
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+The header is required. Scope is optional. All lines must stay under 100 characters.
+
+## Commit Types
+
+Use one of these conventional commit types:
+
+| Type       | Purpose                                       |
+| ---------- | --------------------------------------------- |
+| `build`    | Build system or CI changes                    |
+| `chore`    | Routine maintenance tasks, dependency updates |
+| `ci`       | Continuous integration configuration          |
+| `docs`     | Documentation changes                         |
+| `feat`     | New feature                                   |
+| `fix`      | Bug fix                                       |
+| `perf`     | Performance improvement                       |
+| `refactor` | Code refactoring (no behavior change)         |
+| `revert`   | Revert a previous commit                      |
+| `style`    | Code style and formatting                     |
+| `test`     | Tests added, updated or improved              |
+
+## Subject Line Rules
+
+- Provide concise description of **why** the changes were made
+- Start with a lowercase letter to keep the history consistent- tools like commitlint enforces this (`subject-case` rule forbids sentence-case, start-case, pascal-case, and upper-case)
+- No period or white space at the end
+- Maximum 70 characters
+
+## Body Guidelines
+
+- Explain **why** decisions were made, not how or what
+- Use imperative mood and present tense
+- Include motivation for the change
+- Contrast with previous behavior when relevant
+- Use a bullet point for each distinct concept or reason — this also handles line length naturally
+- If a bullet's text exceeds 80 characters, continue on the next line flush with the bullet text (no indentation)
+
+## Conventional Commits
+
+The commit contains the following structural elements, to communicate intent to the consumers of your library:
+
+- fix: a commit of the type fix patches a bug in your codebase (this correlates with PATCH in Semantic Versioning).
+- feat: a commit of the type feat introduces a new feature to the codebase (this correlates with MINOR in Semantic Versioning).
+- BREAKING CHANGE: a commit that has a footer BREAKING CHANGE:, or appends a ! after the type/scope, introduces a breaking API change (correlating with MAJOR in Semantic Versioning). A BREAKING CHANGE can be part of commits of any type.
+- types other than fix: and feat: are allowed, for example @commitlint/config-conventional (based on the Angular convention) recommends build:, chore:, ci:, docs:, style:, refactor:, perf:, test:, and others.
+- footers other than BREAKING CHANGE: <description> may be provided and follow a convention similar to git trailer format.
+
+## Examples
+
+### Simple fix (with line wrapping)
+
+```zsh
+fix(api): handle null response in user endpoint
+
+- the user API could return null for deleted accounts, causing a crash
+in the dashboard
+- add a null check before accessing user properties to prevent the
+unhandled exception
+```
+
+### Feature with scope (with bullet points)
+
+```zsh
+feat(alerts): add Slack thread replies for alert updates
+
+- post a reply to the original Slack thread when an alert is updated
+or resolved instead of creating a new message
+- keeps related notifications grouped together for easier scanning
+- reduces noise in high-volume alert channels
+```
+
+### Refactor
+
+```zsh
+refactor: extract common validation logic to shared module
+
+Move duplicate validation code from three endpoints into a shared
+validator class. No behavior change.
+```
+
+### Breaking change
+
+```zsh
+feat(api)!: remove deprecated v1 endpoints
+
+Remove all v1 API endpoints that were deprecated in version 23.1.
+Clients should migrate to v2 endpoints.
+
+BREAKING CHANGE: v1 endpoints no longer available
+```
+
+## Revert Format
+
+```zsh
+revert: feat(api): add new endpoint
+
+This reverts commit abc123def456.
+
+Reason: Caused performance regression in production.
+```
+
+## Commit Message Verification
+
+Write multiline commit messages through a file or standard input. Do not use
+escaped `\n` sequences inside `git commit -m` arguments.
+
+Before committing, validate the prepared message:
+
+```zsh
+grep -F '\n' "$commit_message_file" && exit 1
+awk 'length($0) > 80 { print NR ":" length($0) ":" $0; failed=1 }
+    END { exit failed }' "$commit_message_file"
+```
+
+After committing, inspect and validate the message Git stored:
+
+```zsh
+git log -1 --format='%B'
+git log -1 --format='%B' |
+  awk 'length($0) > 80 { print NR ":" length($0) ":" $0; failed=1 }
+      END { exit failed }'
+git log -1 --format='%B' | git interpret-trailers --parse
+```
+
+## Principles
+
+- Each commit should be a single, stable change
+- Commits should be independently reviewable
+- The repository should be in a working state after each commit
+- Provide information on **why** a change was made, as opposed to **what** changed
+
+## References
+
+- [Conventional Commits Specification](https://www.conventionalcommits.org/en/v1.0.0/#specification)

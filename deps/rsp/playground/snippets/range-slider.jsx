@@ -1,0 +1,1 @@
+<RangeSlider label="Price range" />

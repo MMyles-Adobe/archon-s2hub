@@ -1,13 +1,25 @@
-.hlx/*
-coverage/*
-logs/*
-node_modules/*
+.hlx/
+coverage/
+logs/
+node_modules/
 
 helix-importer-ui
+.env
+.dev.env
+.dev.vars
 .DS_Store
 *.bak
 .idea
+.wrangler
+.claude
+.cursor
+.worktrees/
+playwright-report/
+playwright-report-links/
+playwright-report-smoke/
+test-results/
 
-# Ensure these files are tracked
-!CLAUDE.md
-!AGENTS.md
+
+.superpowers/
+tools/indexer/out/
+workers/website-lambda/env.json

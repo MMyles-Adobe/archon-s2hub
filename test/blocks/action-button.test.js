@@ -1,0 +1,282 @@
+import { expect } from '@esm-bundle/chai';
+import sinon from 'sinon';
+import { setConfig } from '../../scripts/ak.js';
+import { SEARCH_ANNOUNCE_EVENT } from '../../scripts/utils/nav-events.js';
+
+// action-button.js binds `const { log } = getConfig()` at module-load time.
+// Call setConfig with a stub first, then dynamically import the module so the
+// stub is captured instead of the default async error handler.
+const logStub = sinon.stub();
+setConfig({ log: logStub });
+
+const {
+  default: actionButton,
+} = await import('../../blocks/action-button/action-button.js');
+
+function makeAnchor({ href = '/unknown', title = 'label:Button', text = 'Click' } = {}) {
+  const a = document.createElement('a');
+  a.href = href;
+  a.title = title;
+  a.textContent = text;
+  return a;
+}
+
+describe('action-button block', () => {
+  afterEach(() => {
+    logStub.resetHistory();
+    document.body.className = '';
+    document.body.innerHTML = '';
+    localStorage.removeItem('color-scheme');
+  });
+
+  describe('text span wrapping', () => {
+    it('replaces the anchor text node with a <span>', () => {
+      const a = makeAnchor({ text: 'Settings' });
+      actionButton(a);
+      expect(a.querySelector('span')).to.not.be.null;
+    });
+
+    it('span carries the original text content', () => {
+      const a = makeAnchor({ text: 'Settings' });
+      actionButton(a);
+      expect(a.querySelector('span').textContent).to.equal('Settings');
+    });
+  });
+
+  describe('unknown pathname — stays as link', () => {
+    it('does not replace the anchor with a button', () => {
+      const a = makeAnchor({ href: '/some/unknown/path' });
+      document.body.append(a);
+      actionButton(a);
+      expect(document.body.querySelector('a')).to.not.be.null;
+    });
+
+    it('does not create any <button> element', () => {
+      const a = makeAnchor({ href: '/some/unknown/path' });
+      document.body.append(a);
+      actionButton(a);
+      expect(document.body.querySelector('button')).to.be.null;
+    });
+  });
+
+  describe('#action — button with no click handler', () => {
+    it('replaces the anchor with a <button>', () => {
+      const a = makeAnchor({ href: '/tools/widgets/action#action' });
+      document.body.append(a);
+      actionButton(a);
+      expect(document.body.querySelector('button')).to.not.be.null;
+      expect(document.body.querySelector('a')).to.be.null;
+    });
+
+    it('moves the text span into the button', () => {
+      const a = makeAnchor({ href: '/tools/widgets/action#action', text: 'Action' });
+      document.body.append(a);
+      actionButton(a);
+      expect(document.body.querySelector('button span').textContent).to.equal('Action');
+    });
+
+    it('stamps the widget name (last path segment) onto the button as data-widget', () => {
+      const a = makeAnchor({ href: '/tools/widgets/action' });
+      document.body.append(a);
+      actionButton(a);
+      expect(document.body.querySelector('button').dataset.widget).to.equal('action');
+    });
+
+    it('click does not throw (no handler is attached)', () => {
+      const a = makeAnchor({ href: '/tools/widgets/action#action' });
+      document.body.append(a);
+      actionButton(a);
+      expect(() => document.body.querySelector('button').click()).to.not.throw();
+    });
+  });
+
+  describe('#scheme — color scheme toggle', () => {
+    it('replaces the anchor with a <button>', () => {
+      const a = makeAnchor({ href: '/tools/widgets/scheme#scheme' });
+      document.body.append(a);
+      actionButton(a);
+      expect(document.body.querySelector('button')).to.not.be.null;
+    });
+
+    it('click switches body from light-scheme to dark-scheme', () => {
+      localStorage.setItem('color-scheme', 'light-scheme');
+      document.body.classList.add('light-scheme');
+      const a = makeAnchor({ href: '/tools/widgets/scheme#scheme' });
+      document.body.append(a);
+      actionButton(a);
+      document.body.querySelector('button').click();
+      expect(document.body.classList.contains('dark-scheme')).to.be.true;
+      expect(document.body.classList.contains('light-scheme')).to.be.false;
+    });
+
+    it('click switches body from dark-scheme to light-scheme', () => {
+      localStorage.setItem('color-scheme', 'dark-scheme');
+      document.body.classList.add('dark-scheme');
+      const a = makeAnchor({ href: '/tools/widgets/scheme#scheme' });
+      document.body.append(a);
+      actionButton(a);
+      document.body.querySelector('button').click();
+      expect(document.body.classList.contains('light-scheme')).to.be.true;
+      expect(document.body.classList.contains('dark-scheme')).to.be.false;
+    });
+
+    it('click persists the new scheme in localStorage', () => {
+      localStorage.setItem('color-scheme', 'light-scheme');
+      const a = makeAnchor({ href: '/tools/widgets/scheme#scheme' });
+      document.body.append(a);
+      actionButton(a);
+      document.body.querySelector('button').click();
+      expect(localStorage.getItem('color-scheme')).to.equal('dark-scheme');
+    });
+
+    it('falls back to matchMedia when localStorage has no entry and saves the result', () => {
+      expect(localStorage.getItem('color-scheme')).to.be.null;
+      const matchMediaStub = sinon.stub(window, 'matchMedia').returns({ matches: true });
+      const a = makeAnchor({ href: '/tools/widgets/scheme#scheme' });
+      document.body.append(a);
+      actionButton(a);
+      document.body.querySelector('button').click();
+      matchMediaStub.restore();
+      expect(localStorage.getItem('color-scheme')).to.equal('light-scheme');
+    });
+
+    it('a synthetic click (keyboard-equivalent activation) produces the same result', () => {
+      localStorage.setItem('color-scheme', 'dark-scheme');
+      document.body.classList.add('dark-scheme');
+      const a = makeAnchor({ href: '/tools/widgets/scheme#scheme' });
+      document.body.append(a);
+      actionButton(a);
+      document.body.querySelector('button').dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true }),
+      );
+      expect(document.body.classList.contains('light-scheme')).to.be.true;
+    });
+  });
+
+  describe('#chat — ask ai', () => {
+    it('replaces the anchor with a <button>', () => {
+      const a = makeAnchor({ href: '/tools/widgets/ask-ai#chat' });
+      document.body.append(a);
+      actionButton(a);
+      expect(document.body.querySelector('button')).to.not.be.null;
+    });
+
+    it('click calls the configured log function', () => {
+      const a = makeAnchor({ href: '/tools/widgets/ask-ai#chat' });
+      document.body.append(a);
+      actionButton(a);
+      document.body.querySelector('button').click();
+      expect(logStub.calledOnce).to.be.true;
+    });
+
+    it('click passes the expected message to log', () => {
+      const a = makeAnchor({ href: '/tools/widgets/ask-ai#chat' });
+      document.body.append(a);
+      actionButton(a);
+      document.body.querySelector('button').click();
+      expect(logStub.calledWith('You asked AI something')).to.be.true;
+    });
+  });
+
+  describe('#settings', () => {
+    it('replaces the anchor with a <button>', () => {
+      const a = makeAnchor({ href: '/tools/widgets/settings#settings' });
+      document.body.append(a);
+      actionButton(a);
+      expect(document.body.querySelector('button')).to.not.be.null;
+    });
+
+    it('click calls the configured log function', () => {
+      const a = makeAnchor({ href: '/tools/widgets/settings#settings' });
+      document.body.append(a);
+      actionButton(a);
+      document.body.querySelector('button').click();
+      expect(logStub.calledOnce).to.be.true;
+    });
+
+    it('click passes the expected message to log', () => {
+      const a = makeAnchor({ href: '/tools/widgets/settings#settings' });
+      document.body.append(a);
+      actionButton(a);
+      document.body.querySelector('button').click();
+      expect(logStub.calledWith('You clicked settings')).to.be.true;
+    });
+  });
+
+  describe('#search', () => {
+    before(async () => {
+      // Warms the search block's module graph (and its two CSS fetches) once,
+      // outside the timed test below.
+      await import('../../blocks/search/search.js');
+    });
+
+    async function waitForSearchElement() {
+      for (let i = 0; i < 50; i += 1) {
+        const el = document.querySelector('sh-search');
+        if (el) { return el; }
+        await new Promise((resolve) => { setTimeout(resolve, 10); });
+      }
+      throw new Error('sh-search did not appear');
+    }
+
+    it('returns focus to the toggle button once the popover clears', async () => {
+      const a = makeAnchor({ href: '/tools/widgets/search' });
+      a.classList.add('action-button');
+      document.body.append(a);
+      actionButton(a);
+      const button = document.body.querySelector('button');
+      button.click();
+
+      const shSearch = await waitForSearchElement();
+      shSearch.dispatchEvent(new CustomEvent('clear'));
+
+      expect(document.activeElement).to.equal(button);
+    });
+
+    it('creates a light-DOM status region before search opens', async () => {
+      const a = makeAnchor({ href: '/tools/widgets/search' });
+      a.classList.add('action-button');
+      document.body.append(a);
+      actionButton(a);
+      document.body.querySelector('button').click();
+
+      const shSearch = await waitForSearchElement();
+      const status = shSearch.previousElementSibling;
+      expect(status.getAttribute('role')).to.equal('status');
+      expect(status.getAttribute('aria-live')).to.equal('polite');
+      expect(status.getAttribute('aria-atomic')).to.equal('true');
+      expect(status.classList.contains('visually-hidden')).to.be.true;
+    });
+
+    it('writes search announcements to the light-DOM status region', async () => {
+      const a = makeAnchor({ href: '/tools/widgets/search' });
+      a.classList.add('action-button');
+      document.body.append(a);
+      actionButton(a);
+      document.body.querySelector('button').click();
+
+      const shSearch = await waitForSearchElement();
+      const status = shSearch.previousElementSibling;
+      shSearch.dispatchEvent(new CustomEvent(SEARCH_ANNOUNCE_EVENT, {
+        detail: { message: 'Foundations' },
+      }));
+      await new Promise((resolve) => { setTimeout(resolve); });
+
+      expect(status.textContent).to.equal('Foundations');
+    });
+
+    it('removes the status region when search closes', async () => {
+      const a = makeAnchor({ href: '/tools/widgets/search' });
+      a.classList.add('action-button');
+      document.body.append(a);
+      actionButton(a);
+      document.body.querySelector('button').click();
+
+      const shSearch = await waitForSearchElement();
+      const status = shSearch.previousElementSibling;
+      shSearch.dispatchEvent(new CustomEvent('clear'));
+
+      expect(status.isConnected).to.be.false;
+    });
+  });
+});

@@ -1,0 +1,191 @@
+import { getConfig } from '../../scripts/ak.js';
+import { getComponentProps } from '../../scripts/utils/extraction-status.js';
+
+const config = getConfig();
+
+const PROPS_TO_LABELS = {
+  attribute: 'Attribute',
+  property: 'Property',
+  type: 'Type',
+  default: 'Default value',
+  description: 'Description',
+  inheritedFrom: 'Inherited from',
+  required: 'Required',
+};
+
+const PROP_ORDER = Object.keys(PROPS_TO_LABELS);
+
+// Base interfaces whose props are DOM/ARIA/event plumbing rather than component API.
+// The extractors write every resolved prop, since each consumer needs a different
+// subset; filtering is this table's own choice. Button resolves 42 props, 8 of which
+// are Spectrum's.
+const EXCLUDED_SOURCES = new Set([
+  'StyleProps',
+  'DOMProps',
+  'SlotProps',
+  'GlobalDOMEvents',
+  'GlobalDOMAttributes',
+  'AriaLabelingProps',
+  'AriaBaseButtonProps',
+  'LinkDOMProps',
+  'PressEvents',
+  'FocusEvents',
+  'KeyboardEvents',
+  'HoverEvents',
+  'FocusableDOMProps',
+  'InputDOMProps',
+  'TextInputDOMProps',
+  'TextInputDOMEvents',
+]);
+// `kind`/`values`/`optional` back the playground's controls; this table shows the
+// human-readable `type` instead.
+const EXCLUDED_COLUMNS = new Set(['status', 'since', 'kind', 'values', 'optional']);
+
+/**
+ * The column-header text repeated inside a body cell. Only the narrow stacked layout
+ * shows it — there the `thead` is clipped out of view, so without this the values arrive
+ * unlabeled. `aria-hidden` because the real `<th scope="col">` already names the cell for
+ * assistive tech; a second copy would announce every header twice.
+ */
+const buildCellLabel = (text) => {
+  const label = document.createElement('span');
+  label.className = 'table-cell-label';
+  label.setAttribute('aria-hidden', 'true');
+  label.textContent = text;
+  return label;
+};
+
+/** A body cell's value, wrapped so it stays one grid item beside its label. */
+const buildCellValue = () => {
+  const value = document.createElement('span');
+  value.className = 'table-cell-value';
+  return value;
+};
+
+const buildTableElement = (headerCells, dataCells) => {
+  const tableHead = document.createElement('thead');
+  tableHead.classList.add('header-row');
+  // explicitly resetting table roles so that when the CSS display property changes on
+  // small screens, no accessibility issues arise (WCAG 1.3.1 (Info and Relationships))
+  tableHead.role = 'rowgroup';
+
+  const headRow = document.createElement('tr');
+  headRow.classList.add('row');
+  headRow.role = 'row';
+  headerCells.forEach((cell) => { cell.role = 'columnheader'; });
+  headRow.append(...headerCells);
+  tableHead.append(headRow);
+
+  const tableBody = document.createElement('tbody');
+  tableBody.role = 'rowgroup';
+  for (const cells of dataCells) {
+    const bodyRow = document.createElement('tr');
+    bodyRow.classList.add('row');
+    bodyRow.role = 'row';
+    cells.forEach((cell, i) => {
+      cell.role = 'cell';
+      const label = headerCells[i]?.textContent?.trim();
+      if (label) { cell.prepend(buildCellLabel(label)); }
+    });
+    bodyRow.append(...cells);
+    tableBody.append(bodyRow);
+  }
+
+  const table = document.createElement('table');
+  table.role = 'table';
+  table.append(tableHead, tableBody);
+  return table;
+};
+
+// supports manually inputting tables in DA
+const buildTable = (rows) => {
+  const [headerRow, ...dataRows] = rows;
+
+  const headerCells = [...headerRow.children].map((col) => {
+    const columnHeader = document.createElement('th');
+    columnHeader.scope = 'col';
+    columnHeader.innerHTML = col.innerHTML;
+    return columnHeader;
+  });
+
+  const dataCells = dataRows.map((row) => [...row.children].map((col) => {
+    const tableCell = document.createElement('td');
+    const value = buildCellValue();
+    value.innerHTML = col.innerHTML;
+    tableCell.append(value);
+    return tableCell;
+  }));
+
+  return buildTableElement(headerCells, dataCells);
+};
+
+// supports populating data table with extracted JSON via a link
+const buildDataTable = async (href) => {
+  const resp = await fetch(href);
+  if (!resp.ok) {
+    config.log('Table data fetch failed:', href);
+    return null;
+  }
+  const json = await resp.json();
+  const rows = getComponentProps(json).filter(
+    (prop) => !EXCLUDED_SOURCES.has(prop.inheritedFrom),
+  );
+
+  if (!rows?.length) { return null; }
+
+  // gather all the available properties for dev table, in canonical column order
+  const allKeys = [...new Set(rows.flatMap(Object.keys))]
+    .filter((key) => !EXCLUDED_COLUMNS.has(key));
+  const properties = [
+    ...PROP_ORDER.filter((k) => allKeys.includes(k)),
+    ...allKeys.filter((k) => !PROP_ORDER.includes(k)),
+  ];
+
+  const headerCells = properties.map((key) => {
+    const columnHeaders = document.createElement('th');
+    columnHeaders.scope = 'col';
+    columnHeaders.textContent = PROPS_TO_LABELS[key] || key.charAt(0).toUpperCase() + key.slice(1);
+    return columnHeaders;
+  });
+
+  // Create data rows
+  const dataCells = rows.map((props) => properties.map((key) => {
+    const tableCell = document.createElement('td');
+    const value = buildCellValue();
+    value.textContent = props[key] || '-';
+    tableCell.append(value);
+    return tableCell;
+  }));
+
+  return buildTableElement(headerCells, dataCells);
+};
+
+export default async function init(el) {
+  const dataHref = el.querySelector('a[href$=".json"]')?.href;
+
+  if (dataHref) {
+    const table = await buildDataTable(dataHref);
+    if (table) { el.replaceChildren(table); }
+  } else {
+    const table = buildTable([...el.children]);
+    el.replaceChildren(table);
+  }
+
+  const table = el.querySelector('table');
+  const h1 = document.querySelector('h1');
+
+  // finds the heading that immediately precedes this table in the section, so each table
+  // on the page gets its own accessible name rather than all sharing the first heading
+  const section = el.closest('.section');
+  const sectionHeading = [...(section?.querySelectorAll('h2, h3, h4, h5, h6') ?? [])]
+    // eslint-disable-next-line no-bitwise
+    .filter((h) => el.compareDocumentPosition(h) & Node.DOCUMENT_POSITION_PRECEDING)
+    .at(-1);
+  const labelIds = [h1, sectionHeading].flatMap((heading) => {
+    if (!heading) { return []; }
+    if (!heading.id) { heading.id = `table-heading-${Math.random().toString(36).slice(2)}`; }
+    return heading.id;
+  });
+  if (table && labelIds.length) { table.setAttribute('aria-labelledby', labelIds.join(' ')); }
+  el.tabIndex = 0;
+}

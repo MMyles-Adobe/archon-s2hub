@@ -1,0 +1,108 @@
+/* Desktop-only in-page table of contents. Below 1200px the block is removed
+from the DOM and the accessibility tree (see page-nav.js). */
+.page-nav {
+  display: none;
+}
+
+@media (width >= 1200px) {
+  .page-nav {
+    display: grid;
+
+    /* Column 1 is an empty spacer that acts as the margin-inline-start */
+    grid-template-columns:
+      minmax(var(--pagenav-inline-start-margin), 1fr)
+      minmax(var(--pagenav-min-inline-size), var(--pagenav-track-width));
+    grid-template-rows: min-content auto;
+    position: sticky;
+    inset-block-start: var(--sh-header-height); /* match the header so the page nav sticks in place */
+    max-block-size: calc(100dvh - var(--sh-header-height, 0px));
+    margin-inline-end: var(--pagenav-inline-end-margin);
+    font-family: var(--s2-font-family, 'Adobe Clean', 'Trebuchet MS', sans-serif);
+    font-size: var(--s2-component-m-medium-font-size);
+    line-height: 1.4;
+    color:  var(--s2-gray-700);
+    
+    /* TODO: why is overflow-y commented out? Without overflow-y: scroll, some of the page navs are so long that
+    on short desktop screens, the page nav gets cut off and you can't scroll. But with it on, it forces the overflow-x
+    to hidden, which also then cuts off the individual link focus rings. Opting for fixing the focus rings for now.
+    overflow-y: scroll; */
+
+    & ul {
+      grid-column: 2;
+      grid-row: 1;
+      border-inline-start: 2px solid rgb(from var(--s2-gray-1000) r g b / 12%);
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    & li + li {
+      margin-block-start: var(--s2-spacing-50);
+    }
+  }
+
+  .page-nav ul a {
+    display: block;
+    padding-block: var(--s2-spacing-100);
+    padding-inline: var(--s2-spacing-200);
+    color: inherit;
+    text-decoration: none;
+    position: relative;
+    outline: none;
+    font-weight: 400;
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0 -2px;
+      inline-size: 2px;
+      block-size: 100%;
+      border-radius: 2px;
+    }
+
+    &:hover {
+      color: var(--s2-gray-1000);
+    }
+
+    &:hover::before {
+      background-color: rgb(from var(--s2-gray-700) r g b / 32%);
+    }
+
+    &:focus-visible::after {
+      border: var(--se-focus-indicator-width) solid var(--s2-blue-900);
+      inline-size: calc(100% - var(--se-focus-indicator-width) * 2);
+      block-size: calc(100% + var(--se-focus-indicator-width) * 2);
+      inset-inline: calc(-4 * var(--se-focus-indicator-width));
+      inset-block: calc(-2 * var(--se-focus-indicator-width));
+      border-radius: 9px;
+    }
+  }
+
+  /* [aria-current] is the scroll-spy state; .is-current is a visual-only
+  stand-in forced on the last link on the page */
+  .page-nav ul a[aria-current="location"],
+  .page-nav ul a.is-current {
+    font-weight: var(--s2-component-m-bold-font-weight);
+    color: var(--s2-gray-1000);
+
+    &::before {
+      background-color: var(--s2-gray-1000);
+    }
+  }
+
+  .page-nav > .page-nav-widgets {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s2-spacing-100);
+    margin-block-start: var(--s2-spacing-700);
+  }
+}
+
+/* Headings opted-in by the block get scroll-margin so the anchor scrolls clear of the fixed header. */
+.page-nav-target {
+  scroll-margin-block-start: var(--sh-header-height, 56px);
+}

@@ -1,0 +1,17 @@
+{
+  "web": {
+    "figma": {
+      "status": "available"
+    },
+    "rsp": {
+      "status": "available",
+      "context": "Stable",
+      "upstreamName": "ActionButtonGroup"
+    },
+    "swc": {
+      "status": "available",
+      "context": "Stable"
+    }
+  },
+  "figmaPageId": "9230:10723"
+}

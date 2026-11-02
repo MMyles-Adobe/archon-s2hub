@@ -1,0 +1,123 @@
+[
+  {
+    "attribute": "variant",
+    "property": "variant",
+    "type": "\"informative\" | \"positive\" | \"notice\" | \"negative\"",
+    "kind": "enum",
+    "values": [
+      "informative",
+      "positive",
+      "notice",
+      "negative"
+    ],
+    "optional": false,
+    "default": "'informative'",
+    "description": "The variant of the meter. Drives the bar fill color.",
+    "inheritedFrom": "MeterBase",
+    "since": "2.0.0-beta.1"
+  },
+  {
+    "attribute": "value",
+    "property": "value",
+    "type": "number",
+    "kind": "number",
+    "values": [],
+    "optional": false,
+    "default": "0",
+    "description": "Current value. Sanitized via `clampedValue` for rendering and\n`aria-valuenow`.",
+    "inheritedFrom": "LinearProgressMixin",
+    "since": "2.0.0-beta.1"
+  },
+  {
+    "attribute": "min-value",
+    "property": "minValue",
+    "type": "number",
+    "kind": "number",
+    "values": [],
+    "optional": false,
+    "default": "0",
+    "description": "Bottom of the value range.",
+    "inheritedFrom": "LinearProgressMixin",
+    "since": "2.0.0-beta.1"
+  },
+  {
+    "attribute": "max-value",
+    "property": "maxValue",
+    "type": "number",
+    "kind": "number",
+    "values": [],
+    "optional": false,
+    "default": "100",
+    "description": "Top of the value range.",
+    "inheritedFrom": "LinearProgressMixin",
+    "since": "2.0.0-beta.1"
+  },
+  {
+    "attribute": "accessible-label",
+    "property": "accessibleLabel",
+    "type": "string",
+    "kind": "text",
+    "values": [],
+    "optional": false,
+    "default": "''",
+    "description": "Rare-case accessible-name fallback used when there is no visible\n`label` slot content (for example, a data grid of meters).\nRenders into `aria-label` on the role element when set.",
+    "inheritedFrom": "LinearProgressMixin",
+    "since": "2.0.0-beta.1"
+  },
+  {
+    "attribute": "value-label",
+    "property": "valueLabel",
+    "type": "string",
+    "kind": "text",
+    "values": [],
+    "optional": true,
+    "description": "Custom value text (e.g. `\"1 of 4\"`). Overrides the auto-formatted\nvalue in both rendered text and `aria-valuetext`.",
+    "inheritedFrom": "LinearProgressMixin",
+    "since": "2.0.0-beta.1"
+  },
+  {
+    "attribute": "label-position",
+    "property": "labelPosition",
+    "type": "\"top\" | \"side\"",
+    "kind": "enum",
+    "values": [
+      "top",
+      "side"
+    ],
+    "optional": false,
+    "default": "'top'",
+    "description": "Position of the label relative to the bar.",
+    "inheritedFrom": "LinearProgressMixin",
+    "since": "2.0.0-beta.1"
+  },
+  {
+    "attribute": "static-color",
+    "property": "staticColor",
+    "type": "\"white\" | \"black\"",
+    "kind": "enum",
+    "values": [
+      "white",
+      "black"
+    ],
+    "optional": true,
+    "description": "Static color override for use on images or colored backgrounds.",
+    "inheritedFrom": "LinearProgressMixin",
+    "since": "2.0.0-beta.1"
+  },
+  {
+    "attribute": "size",
+    "property": "size",
+    "type": "\"s\" | \"m\" | \"l\" | \"xl\"",
+    "kind": "enum",
+    "values": [
+      "s",
+      "m",
+      "l",
+      "xl"
+    ],
+    "optional": false,
+    "description": "The size of the meter.",
+    "inheritedFrom": "SizedMixin",
+    "since": "2.0.0-beta.1"
+  }
+]

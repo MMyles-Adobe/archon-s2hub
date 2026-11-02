@@ -1,0 +1,102 @@
+{
+  "swc": {
+    "swc-card": {
+      "canonical": "Cards",
+      "upstreamName": "Card"
+    },
+    "swc-dropzone": {
+      "canonical": "DropZone"
+    }
+  },
+  "rsp": {
+    "AlertDialog": {
+      "canonical": "AlertDialog",
+      "upstreamName": "Dialog"
+    },
+    "ToastContainer": "Toast",
+    "CardPreview": "Cards",
+    "CardsAsset": "Cards",
+    "CardsCollection": "Cards",
+    "CardsGallery": "Cards",
+    "CardsHorizontal": "Cards",
+    "CardsProduct": "Cards",
+    "CardsUser": "Cards",
+    "CardView": "Cards",
+    "Card": {
+      "canonical": "Cards",
+      "upstreamName": "Card"
+    },
+    "CloseButton": {
+      "canonical": "CloseButton",
+      "upstreamName": "Button"
+    },
+    "ColorHandle": {
+      "canonical": "ColorHandle",
+      "upstreamName": "ColorSlider"
+    },
+    "ColorSwatchPicker": {
+      "canonical": "SwatchGroup",
+      "upstreamName": "ColorSwatchPicker"
+    },
+    "ColorSwatch": {
+      "canonical": "Swatch",
+      "upstreamName": "ColorSwatch"
+    },
+    "SelectBoxGroup": {
+      "canonical": "SelectBox",
+      "upstreamName": "SelectBoxGroup"
+    },
+    "ActionButtonGroup": {
+      "canonical": "ActionGroup",
+      "upstreamName": "ActionButtonGroup"
+    },
+    "Dialog": {
+      "canonical": "StandardDialog",
+      "upstreamName": "Dialog"
+    },
+    "FullscreenDialog": {
+      "canonical": "TakeoverDialog",
+      "upstreamName": "Dialog"
+    },
+    "InlineAlert": {
+      "canonical": "InLineAlert",
+      "upstreamName": "InlineAlert"
+    },
+    "TableView": {
+      "canonical": "Table",
+      "upstreamName": "TableView"
+    },
+    "Radio": {
+      "canonical": "RadioButton",
+      "upstreamName": "RadioGroup"
+    },
+    "Image": {
+      "canonical": "Thumbnail",
+      "upstreamName": "Image"
+    },
+    "SideNav": {
+      "canonical": "SideNavigation",
+      "upstreamName": "SideNav"
+    },
+    "Tag": {
+      "canonical": "Tag",
+      "upstreamName": "TagGroup"
+    }
+  },
+  "figma": {
+    "In-line alert": "InLineAlert",
+    "In Line Alert": "InLineAlert",
+    "Card": "Cards",
+    "Cards (Asset)": "Cards",
+    "Cards (Collection)": "Cards",
+    "Cards (Gallery)": "Cards",
+    "Cards (Horizontal)": "Cards",
+    "Cards (Product)": "Cards",
+    "Cards (User)": "Cards",
+    "Badge (Notification + Indicator)": "NotificationBadge",
+    "Button (Gradient)": "Button",
+    "Slider (Offset)": "Slider",
+    "Slider (Ramp)": "Slider",
+    "Slider (Range)": "Slider"
+  }
+}

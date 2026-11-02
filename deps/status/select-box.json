@@ -1,0 +1,16 @@
+{
+  "web": {
+    "figma": {
+      "status": "available"
+    },
+    "rsp": {
+      "status": "available",
+      "context": "Stable",
+      "upstreamName": "SelectBoxGroup"
+    },
+    "swc": {
+      "status": "not-available"
+    }
+  },
+  "figmaPageId": "9966:48949"
+}
